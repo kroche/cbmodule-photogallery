@@ -24,16 +24,29 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 	/**
 	* Renders a photo gallery
 	* @folder.hint The folder (relative to the ContentBox content root) from which to list the gallery of photos
-	* @filter.hint A file extension filter to apply (*.jpg)
+	* @filter.hint A list of file extension filters to apply (*.jpg), use a | to separate multiple filters
 	* @sort.hint The sort field (Name, Size, DateLastModified)
 	* @order.hint The sort order of the photos (ASC/DESC)
+	* @rowsPerPage.hint The number of rows of images to display
+	* @rowsPerPage.type numeric
+	* @imagesPerRow.hint The number of images to display per row
+	* @imagesPerRow.type numeric
+	* @navPosition.hint The position of the previous and next buttons on the gallery page
+	* @navPosition.type string
+	* @navPosition.options above,below,each side
+	* @showOnPage.hint when a user clicks on an image should the link go to a page or the image itself?
+	* @showOnPage.type boolean
 	* @class.hint Class(es) to apply to the gallery
+	
 	*/
-	any function renderIt(string folder,string filter="*",string sort="Name",string order="ASC",string class=""){
+	any function renderIt(string folder, string filter="*", string sort="Name", string order="ASC", numeric rowsPerPage=0, numeric imagesPerRow=0, string navPosition="each side", boolean showOnPage=true, string class="" ){
 		var event = getRequestContext();
 		rc = event.getCollection();
 
-		param name="rc.startRow" default=1;
+		rc.startRow = rc.startRow ?: 1;
+		var startRow = val(rc.startRow);
+		if (startRow lt 1){ startRow = 1; };
+		var oneImage = rc.oneImage ?: false;
 
 		var relativePath = "";
 		var cbSettings = event.getValue(name="cbSettings",private=true);
@@ -56,6 +69,9 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 			return "This widget is restricted to the ContentBox media root.  All photo galleries must be contained within that directory.";
 		}
 
+		var navPosition = listFindNoCase("above,below,each side", arguments.navPosition) ? arguments.navPosition : "each side";
+
+		// get a query containing all the images
 		var gallery = directoryList(mediaPathExpanded,false,"query",arguments.filter,sortOrder);
 		var query = new Query();
 		query.setAttributes(directoryListing = gallery);
@@ -65,16 +81,31 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 
 		var galleryFolders = qryGalleryFolders.getResult();
 		var galleryPhotos = qryGalleryPhotos.getResult();
+		var maxPhotosPerPage = (rowsPerPage * imagesPerRow) GT 0 ? (rowsPerPage * imagesPerRow) : settings.maxPhotosPerPage;
+		var maxPhotosPerRow = (imagesPerRow) GT 0 ? (imagesPerRow) : settings.maxPhotosPerRow;
 		
 		var settings = deserializeJSON(settingService.getSetting( "photo_gallery" ));
-		var imageWidth = settings.imageSize.small.resizeWidth;
+		var displaySize     = oneImage ? "normal" : "small";
+		var maxRows         = oneImage ? 1 : maxPhotosPerPage;
+		var maxPhotosPerRow = oneImage ? 1 : maxPhotosPerRow;
+		var marginLeft      = oneImage ? "200px" : "0";
+		var marginTop       = "200px";
+		var imageWidth      = settings.imageSize[#displaySize#].resizeWidth;
+		var imageHeight     = settings.imageSize[#displaySize#].resizeHeight ;
+		var showOnPage = true;
+		var navigation = "icon";
 
 		// generate photo gallery
 		saveContent variable="rString"{
 			writeOutput('
 				<style>
+					.cb-photogallery {
+						margin: 0 auto 0 auto;
+					}
+
 					.cb-photogallery-tiles {
 						overflow: hidden;
+						float: left;
 					}
 
 					.cb-photogallery-tile {
@@ -85,7 +116,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						box-shadow: 0 0 7px rgba(0, 0, 0, 0.5);
 						position: relative;
 						width: #imageWidth#px;
-						margin: 0 15px 20px 0;
+						margin: 0 20px 20px 0;
 						background-color: ##fff;
 					}
 					
@@ -101,6 +132,49 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						border-radius: 3px;
 					}
 
+					.fa-2xl {
+						font-size: 32px;
+					}
+
+					.cb-photogallery-previcon, .cb-photogallery-nexticon {
+						float: left;
+					}
+
+					.cb-photogallery-previcon {
+						margin-left: #marginLeft#;
+						margin-right: 20px;
+					}
+					
+					.cb-photogallery-previcon,
+					.cb-photogallery-nexticon {
+						margin-top: #marginTop#;
+					}
+					
+					.cb-photogallery-previcon .cb-photogallery-prevlink, 
+					.cb-photogallery-nexticon .cb-photogallery-nextlink{
+						float: left;
+					}
+					
+					.cb-photogallery-prevpage {
+						float: left;
+						width: 45%;
+						margin-right: 20px;
+					}
+					.cb-photogallery-pageinfo {
+						float: left;
+						width: 50%;
+					}
+					
+					.cb-photogallery-pageinfo-center {
+						width: 100%;
+						text-align: center;
+						float: left;
+					}
+					
+					.cb-photogallery-nextpage  {
+						float: right;
+					}
+					
 					.widget-preview-content .cb-photogallery-tile,
 					.widget-preview-content a.cb-photogallery-nextlink,
 					.widget-preview-content a.cb-photogallery-prevlink {
@@ -116,14 +190,6 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						content: ")";
 					}
 
-					a.cb-photogallery-prevlink:before {
-						content: "\2190 \020";
-					}
-
-					a.cb-photogallery-nextlink:after {
-						content: "\020 \2192";
-					}
-
 					span.cb-photogallery-prevlink,
 					span.cb-photogallery-nextlink {
 						cursor: not-allowed;
@@ -131,56 +197,107 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 				</style>
 			');
 
-			writeOutput('<div class="cb-photogallery"><div class="cb-photogallery-tiles">');
+			var totalPages = ceiling(galleryPhotos.recordCount / maxRows);
+			var thisPage = ceiling(startRow / maxRows);
+			var oneImageParam = oneimage ? "&oneimage=1" : "";
+			var previousPageLink = "";
+			var nextPageLink = "";
+			if (totalPages gt 1) {
+				var previousPageStart = startRow - maxRows;
+				var prevElement = '<i class="fa fa-chevron-left fa-2xl"></i>';
+				var nextElement = '<i class="fa fa-chevron-right fa-2xl"></i>';
 
-			var maxRows = settings.maxPhotosPerPage;
-			var maxPhotosPerRow = settings.maxPhotosPerRow;
-			var startRow = val(rc.startRow);
-			if (startRow lt 1){ startRow = 1; };
+				if ( previousPageStart gte 1) {
+					previousPageLink = "<a href='" & #cgi.path_info# & "?startRow=" & previousPageStart & "#oneImageParam#' class='cb-photogallery-prevlink'>#prevElement#</a>";
+				} else {
+					previousPageLink = "<span class='cb-photogallery-prevlink'>#prevElement#</span>";
+				}
+				var nextPageStart = startRow + maxRows;
+				if ( nextPageStart lt galleryPhotos.recordcount ) {
+					nextPageLink = "<a href='" & #cgi.path_info# & "?startRow=" & nextPageStart & "#oneImageParam#' class='cb-photogallery-nextlink'>#nextElement#</a>";
+				} else {
+					nextPageLink = "<span class='cb-photogallery-nextlink'>#nextElement#</span>";
+				}
+			}
+
+			writeOutput('<div id="cb-div-photogallery-outer" class="#arguments.class#"><div id="cb-div-photogallery" class="cb-photogallery">');
+			
+			if (totalPages gt 1 and navPosition eq "above"){
+				writeOutput('
+					<div class="cb-photogallery-prevpage">
+						#previousPageLink#
+					</div>
+					<div class="cb-photogallery-nextpage">
+						#nextPageLink#
+					</div>
+				');
+			}
+			if (totalPages gt 1 and navPosition eq "each side"){
+				writeOutput('<div id="divPrevIcon" class="cb-photogallery-previcon">#previousPageLink#</div>');
+			}
+					
+			writeOutput('<div id="divGallery" class="cb-photogallery-tiles">');
+
 			var newline = "";
-
 			for (var x=startRow; (x lte startRow + maxRows - 1) and (x lte galleryPhotos.recordcount); x++) {
 				if (maxPhotosPerRow gt 0){
 					newline = (x MOD maxPhotosPerRow) eq 1 ? "cb-photogallery-newline" : "";
 				}
+				if( showOnPage ){
+					writeOutput('
+						<div class="cb-photogallery-tile #newline#">
+							<a href="#cgi.path_info#?startRow=#x#&oneimage=1" title="#galleryPhotos.name[x]#" class="cb-photogallery-link">
+								<img src="#galleryPath#/#displaySize#/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" alt="#galleryPhotos.name[x]#" class="cb-photogallery-image" rel="group">
+							</a>
+						</div>
+					');
+				}else{
+					writeOutput('
+						<div class="cb-photogallery-tile #newline#">
+							<a href="#galleryPath#/normal/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" class="cb-photogallery-link">
+								<img src="#galleryPath#/small/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" alt="#galleryPhotos.name[x]#" class="cb-photogallery-image" rel="group">
+							</a>
+						</div>
+					');
+				}
+			}
+
+			writeOutput('</div>');
+			
+			writeOutput('<div id="divNextIcon" class="cb-photogallery-nexticon">#nextPageLink#</div>');
+
+			if (totalPages gt 1 and navPosition eq "below") {
 				writeOutput('
-					<div class="cb-photogallery-tile #newline#">
-						<a href="#galleryPath#/normal/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" class="cb-photogallery-link">
-							<img src="#galleryPath#/small/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" alt="#galleryPhotos.name[x]#" class="cb-photogallery-image" rel="group">
-						</a>
+					<div class="cb-photogallery-prevpage">
+						#previousPageLink#
+					</div>
+					<div class="cb-photogallery-pageinfo">
+						page #thisPage# of #totalPages#
+					</div>
+					<div class="cb-photogallery-nextpage">
+						#nextPageLink#
+					</div>
+				');
+			}else if (totalPages gt 1){
+				writeOutput('
+					<div class="cb-photogallery-pageinfo-center">
+						page #thisPage# of #totalPages#
 					</div>
 				');
 			}
 
-			writeOutput('</div>');
-
-			var totalPages = ceiling(galleryPhotos.recordCount / maxRows);
-			var thisPage = ceiling(startRow / maxRows);
-
-			if (totalPages gt 1) {
-				var previousPageStart = startRow - maxRows;
-				if ( previousPageStart gte 1 ) {
-					var previousPageLink = "<a href='" & #cgi.path_info# & "?startRow=" & previousPageStart & "' class='cb-photogallery-prevlink'>previous</a>";
-				} else {
-					var previousPageLink = "<span class='cb-photogallery-prevlink'>previous</span>";
-				}
-				var nextPageStart = startRow + maxRows;
-				if ( nextPageStart lt galleryPhotos.recordcount ) {
-					var nextPageLink = "<a href='" & #cgi.path_info# & "?startRow=" & nextPageStart & "' class='cb-photogallery-nextlink'>next</a>";
-				} else {
-					var nextPageLink = "<span class='cb-photogallery-nextlink'>next</span>";
-				}
-
+			if (totalPages gt 1 and navPosition eq "each side"){
 				writeOutput('
-					<div class="cb-photogallery-paging">
-						#previousPageLink# | #nextPageLink#
-						<span class="cb-photogallery-pageinfo">#thisPage# of #totalPages#</span>
-					</div>
+					</div></div>
+					<script language="javascript" type="text/javascript">
+						window.onload = function() {
+							var marginTop = ((document.getElementById("divGallery").clientHeight-16)/2) ;
+							document.getElementById("divPrevIcon").style["marginTop"] = marginTop+"px";
+							document.getElementById("divNextIcon").style["marginTop"] = marginTop+"px";
+						};
+					</script>
 				');
 			}
-
-			writeOutput('</div>');
-
 		}
 
 		return rString;
