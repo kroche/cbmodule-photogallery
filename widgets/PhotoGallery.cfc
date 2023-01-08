@@ -85,6 +85,8 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		var maxPhotosPerRow = (imagesPerRow) GT 0 ? (imagesPerRow) : settings.maxPhotosPerRow;
 		
 		var settings = deserializeJSON(settingService.getSetting( "photo_gallery" ));
+		
+		// set sizes for layout and images on the current page
 		var displaySize     = oneImage ? "normal" : "small";
 		var maxRows         = oneImage ? 1 : maxPhotosPerPage;
 		var maxPhotosPerRow = oneImage ? 1 : maxPhotosPerRow;
@@ -92,8 +94,32 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		var marginTop       = "200px";
 		var imageWidth      = settings.imageSize[#displaySize#].resizeWidth;
 		var imageHeight     = settings.imageSize[#displaySize#].resizeHeight ;
-		var showOnPage = true;
-		var navigation = "icon";
+		
+		// calculate the number of pages and which page we are on
+		var totalPages = ceiling(galleryPhotos.recordCount / maxRows);
+		var thisPage = ceiling(startRow / maxRows);
+		
+		// make HTML for links to the previous and next pages
+		var oneImageParam = oneimage ? "&oneimage=1" : "";
+		var previousPageLink = "";
+		var nextPageLink = "";
+		if (totalPages gt 1) {
+			var prevElement = '<i class="fa fa-chevron-left fa-2xl"></i>';
+			var nextElement = '<i class="fa fa-chevron-right fa-2xl"></i>';
+			
+			var previousPageStart = startRow - maxRows;
+			if ( previousPageStart gte 1) {
+				previousPageLink = "<a href='" & #cgi.path_info# & "?startRow=" & previousPageStart & "#oneImageParam#' class='cb-photogallery-prevlink'>#prevElement#</a>";
+			} else {
+				previousPageLink = "<span class='cb-photogallery-prevlink'>#prevElement#</span>";
+			}
+			var nextPageStart = startRow + maxRows;
+			if ( nextPageStart lt galleryPhotos.recordcount ) {
+				nextPageLink = "<a href='" & #cgi.path_info# & "?startRow=" & nextPageStart & "#oneImageParam#' class='cb-photogallery-nextlink'>#nextElement#</a>";
+			} else {
+				nextPageLink = "<span class='cb-photogallery-nextlink'>#nextElement#</span>";
+			}
+		}
 
 		// generate photo gallery
 		saveContent variable="rString"{
@@ -196,32 +222,11 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					}
 				</style>
 			');
-
-			var totalPages = ceiling(galleryPhotos.recordCount / maxRows);
-			var thisPage = ceiling(startRow / maxRows);
-			var oneImageParam = oneimage ? "&oneimage=1" : "";
-			var previousPageLink = "";
-			var nextPageLink = "";
-			if (totalPages gt 1) {
-				var previousPageStart = startRow - maxRows;
-				var prevElement = '<i class="fa fa-chevron-left fa-2xl"></i>';
-				var nextElement = '<i class="fa fa-chevron-right fa-2xl"></i>';
-
-				if ( previousPageStart gte 1) {
-					previousPageLink = "<a href='" & #cgi.path_info# & "?startRow=" & previousPageStart & "#oneImageParam#' class='cb-photogallery-prevlink'>#prevElement#</a>";
-				} else {
-					previousPageLink = "<span class='cb-photogallery-prevlink'>#prevElement#</span>";
-				}
-				var nextPageStart = startRow + maxRows;
-				if ( nextPageStart lt galleryPhotos.recordcount ) {
-					nextPageLink = "<a href='" & #cgi.path_info# & "?startRow=" & nextPageStart & "#oneImageParam#' class='cb-photogallery-nextlink'>#nextElement#</a>";
-				} else {
-					nextPageLink = "<span class='cb-photogallery-nextlink'>#nextElement#</span>";
-				}
-			}
-
-			writeOutput('<div id="cb-div-photogallery-outer" class="#arguments.class#"><div id="cb-div-photogallery" class="cb-photogallery">');
 			
+			// Generate the HTML for the gallery
+			writeOutput('<div id="cb-div-photogallery-outer" class="#arguments.class#"><div id="cb-div-photogallery" class="cb-photogallery">');
+
+			// Above the gallery or image
 			if (totalPages gt 1 and navPosition eq "above"){
 				writeOutput('
 					<div class="cb-photogallery-prevpage">
@@ -232,10 +237,13 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					</div>
 				');
 			}
+			
+			// To the left of the gallery or image
 			if (totalPages gt 1 and navPosition eq "each side"){
 				writeOutput('<div id="divPrevIcon" class="cb-photogallery-previcon">#previousPageLink#</div>');
 			}
 					
+			// The gallery or image
 			writeOutput('<div id="divGallery" class="cb-photogallery-tiles">');
 
 			var newline = "";
@@ -262,10 +270,12 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 				}
 			}
 
-			writeOutput('</div>');
+			writeOutput('</div>'); //end of #divGallery and .cb-photogallery-tiles
 			
+			// To the the right of the gallery or image
 			writeOutput('<div id="divNextIcon" class="cb-photogallery-nexticon">#nextPageLink#</div>');
 
+			// Below the gallery or image
 			if (totalPages gt 1 and navPosition eq "below") {
 				writeOutput('
 					<div class="cb-photogallery-prevpage">
@@ -286,9 +296,11 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 				');
 			}
 
+			writeOutput('</div></div>');
+
+			// fix for navigation button vertical position either side of the image or gallery
 			if (totalPages gt 1 and navPosition eq "each side"){
 				writeOutput('
-					</div></div>
 					<script language="javascript" type="text/javascript">
 						window.onload = function() {
 							var marginTop = ((document.getElementById("divGallery").clientHeight-16)/2) ;
