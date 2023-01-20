@@ -39,13 +39,18 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 	* @class.hint Class(es) to apply to the gallery
 	
 	*/
+	
+	// cbwire helper
+	include "\modules\cbwire\helpers\helpers.cfm";
+
 	any function renderIt(string folder, string filter="*", string sort="Name", string order="ASC", numeric rowsPerPage=0, numeric imagesPerRow=0, string navPosition="each side", boolean showOnPage=true, string class="" ){
 		var event = getRequestContext();
 		rc = event.getCollection();
 
-		rc.startRow = rc.startRow ?: 1;
-		var startRow = val(rc.startRow);
-		if (startRow lt 1){ startRow = 1; };
+		rc.startImage = rc.startImage ?: 1;
+		var startImage = val(rc.startImage);
+		if (startImage lt 1){ startImage = 1; };
+
 		var oneImage = rc.oneImage ?: false;
 
 		var relativePath = "";
@@ -88,38 +93,16 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		
 		// set sizes for layout and images on the current page
 		var displaySize     = oneImage ? "normal" : "small";
-		var maxRows         = oneImage ? 1 : maxPhotosPerPage;
-		var maxPhotosPerRow = oneImage ? 1 : maxPhotosPerRow;
+		var maxImages       = oneImage ? 1 : maxPhotosPerPage;
+		var maxImagesPerRow = oneImage ? 1 : maxPhotosPerRow;
 		var marginLeft      = oneImage ? "200px" : "0";
 		var marginTop       = "200px";
 		var imageWidth      = settings.imageSize[#displaySize#].resizeWidth;
 		var imageHeight     = settings.imageSize[#displaySize#].resizeHeight ;
 		
 		// calculate the number of pages and which page we are on
-		var totalPages = ceiling(galleryPhotos.recordCount / maxRows);
-		var thisPage = ceiling(startRow / maxRows);
-		
-		// make HTML for links to the previous and next pages
-		var oneImageParam = oneimage ? "&oneimage=1" : "";
-		var previousPageLink = "";
-		var nextPageLink = "";
-		if (totalPages gt 1) {
-			var prevElement = '<i class="fa fa-chevron-left fa-2xl"></i>';
-			var nextElement = '<i class="fa fa-chevron-right fa-2xl"></i>';
-			
-			var previousPageStart = startRow - maxRows;
-			if ( previousPageStart gte 1) {
-				previousPageLink = "<a href='" & #cgi.path_info# & "?startRow=" & previousPageStart & "#oneImageParam#' class='cb-photogallery-prevlink'>#prevElement#</a>";
-			} else {
-				previousPageLink = "<span class='cb-photogallery-prevlink'>#prevElement#</span>";
-			}
-			var nextPageStart = startRow + maxRows;
-			if ( nextPageStart lt galleryPhotos.recordcount ) {
-				nextPageLink = "<a href='" & #cgi.path_info# & "?startRow=" & nextPageStart & "#oneImageParam#' class='cb-photogallery-nextlink'>#nextElement#</a>";
-			} else {
-				nextPageLink = "<span class='cb-photogallery-nextlink'>#nextElement#</span>";
-			}
-		}
+		var totalPages = ceiling(galleryPhotos.recordCount / maxImages);
+		var thisPage = ceiling(startImage / maxImages);
 
 		// generate photo gallery
 		saveContent variable="rString"{
@@ -222,94 +205,26 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					}
 				</style>
 			');
-			
+
+			wireArgs = {
+				mediaPathExpanded = mediaPathExpanded,
+				filter = arguments.filter,
+				sortOrder = sortOrder,
+				galleryPath = galleryPath,
+				startImage = startImage,
+				maxImages = maxImages,
+				totalPages = totalPages,
+				imageCount = galleryPhotos.recordCount,
+				class = arguments.class,
+				navPosition = navPosition,
+				showOnPage = showOnPage,
+				maxImgPerRow = imagesPerRow,
+				displaySize = displaySize,
+				oneImage = oneImage
+			};
+
 			// Generate the HTML for the gallery
-			writeOutput('<div id="cb-div-photogallery-outer" class="#arguments.class#"><div id="cb-div-photogallery" class="cb-photogallery">');
-
-			// Above the gallery or image
-			if (totalPages gt 1 and navPosition eq "above"){
-				writeOutput('
-					<div class="cb-photogallery-prevpage">
-						#previousPageLink#
-					</div>
-					<div class="cb-photogallery-nextpage">
-						#nextPageLink#
-					</div>
-				');
-			}
-			
-			// To the left of the gallery or image
-			if (totalPages gt 1 and navPosition eq "each side"){
-				writeOutput('<div id="divPrevIcon" class="cb-photogallery-previcon">#previousPageLink#</div>');
-			}
-					
-			// The gallery or image
-			writeOutput('<div id="divGallery" class="cb-photogallery-tiles">');
-
-			var newline = "";
-			for (var x=startRow; (x lte startRow + maxRows - 1) and (x lte galleryPhotos.recordcount); x++) {
-				if (maxPhotosPerRow gt 0){
-					newline = (x MOD maxPhotosPerRow) eq 1 ? "cb-photogallery-newline" : "";
-				}
-				if( showOnPage ){
-					writeOutput('
-						<div class="cb-photogallery-tile #newline#">
-							<a href="#cgi.path_info#?startRow=#x#&oneimage=1" title="#galleryPhotos.name[x]#" class="cb-photogallery-link">
-								<img src="#galleryPath#/#displaySize#/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" alt="#galleryPhotos.name[x]#" class="cb-photogallery-image" rel="group">
-							</a>
-						</div>
-					');
-				}else{
-					writeOutput('
-						<div class="cb-photogallery-tile #newline#">
-							<a href="#galleryPath#/normal/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" class="cb-photogallery-link">
-								<img src="#galleryPath#/small/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" alt="#galleryPhotos.name[x]#" class="cb-photogallery-image" rel="group">
-							</a>
-						</div>
-					');
-				}
-			}
-
-			writeOutput('</div>'); //end of #divGallery and .cb-photogallery-tiles
-			
-			// To the the right of the gallery or image
-			writeOutput('<div id="divNextIcon" class="cb-photogallery-nexticon">#nextPageLink#</div>');
-
-			// Below the gallery or image
-			if (totalPages gt 1 and navPosition eq "below") {
-				writeOutput('
-					<div class="cb-photogallery-prevpage">
-						#previousPageLink#
-					</div>
-					<div class="cb-photogallery-pageinfo">
-						page #thisPage# of #totalPages#
-					</div>
-					<div class="cb-photogallery-nextpage">
-						#nextPageLink#
-					</div>
-				');
-			}else if (totalPages gt 1){
-				writeOutput('
-					<div class="cb-photogallery-pageinfo-center">
-						page #thisPage# of #totalPages#
-					</div>
-				');
-			}
-
-			writeOutput('</div></div>');
-
-			// fix for navigation button vertical position either side of the image or gallery
-			if (totalPages gt 1 and navPosition eq "each side"){
-				writeOutput('
-					<script language="javascript" type="text/javascript">
-						window.onload = function() {
-							var marginTop = ((document.getElementById("divGallery").clientHeight-16)/2) ;
-							document.getElementById("divPrevIcon").style["marginTop"] = marginTop+"px";
-							document.getElementById("divNextIcon").style["marginTop"] = marginTop+"px";
-						};
-					</script>
-				');
-			}
+			writeOutput('#wire( "gallery", wireArgs )#');
 		}
 
 		return rString;
