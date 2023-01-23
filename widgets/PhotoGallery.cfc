@@ -11,7 +11,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 
 		// Widget Properties
 		setName("PhotoGallery");
-		setVersion("2.0");
+		setVersion("2.1");
 		setDescription("A widget that renders a gallery of the photos in a folder.");
 		setForgeBoxSlug("cbwidget-photogallery");
 		setAuthor("Computer Know How, LLC");
@@ -208,6 +208,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 
 			wireArgs = {
 				mediaPathExpanded = mediaPathExpanded,
+				URL = event.getCurrentRoutedURL(),
 				filter = arguments.filter,
 				sortOrder = sortOrder,
 				galleryPath = galleryPath,
