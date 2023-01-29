@@ -23,6 +23,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 
 	/**
 	* Renders a photo gallery
+	* @title.hint The title of the gallery
 	* @folder.hint The folder (relative to the ContentBox content root) from which to list the gallery of photos
 	* @filter.hint A list of file extension filters to apply (*.jpg), use a | to separate multiple filters
 	* @sort.hint The sort field (Name, Size, DateLastModified)
@@ -43,10 +44,9 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 	// cbwire helper
 	include "\modules\cbwire\helpers\helpers.cfm";
 
-	any function renderIt(string folder, string filter="*", string sort="Name", string order="ASC", numeric rowsPerPage=0, numeric imagesPerRow=0, string navPosition="each side", boolean showOnPage=true, string class="" ){
+	any function renderIt(string title="", string folder, string filter="*", string sort="Name", string order="ASC", numeric rowsPerPage=0, numeric imagesPerRow=0, string navPosition="each side", boolean showOnPage=true, string class="" ){
 		var event = getRequestContext();
 		rc = event.getCollection();
-
 		rc.startImage = rc.startImage ?: 1;
 		var startImage = val(rc.startImage);
 		if (startImage lt 1){ startImage = 1; };
@@ -81,14 +81,19 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		var query = new Query();
 		query.setAttributes(directoryListing = gallery);
 
-		var qryGalleryFolders = query.execute(sql="select * from directoryListing where type = 'Dir' and name <> '_photogallery'", dbtype="query");
+		//var qryGalleryFolders = query.execute(sql="select * from directoryListing where type = 'Dir' and name <> '_photogallery'", dbtype="query");
 		var qryGalleryPhotos = query.execute(sql="select * from directoryListing where type = 'File'", dbtype="query");
 
-		var galleryFolders = qryGalleryFolders.getResult();
-		var galleryPhotos = qryGalleryPhotos.getResult();
+		//var galleryFolders = qryGalleryFolders.getResult();
+		var galleryPhotos  = qryGalleryPhotos.getResult();
+		var galleryArray = [];
+		for (row in galleryPhotos){
+			item = {name=row.name, title=row.name, directory=row.directory};
+			arrayAppend(galleryArray, item);
+		}
 		var maxPhotosPerPage = (rowsPerPage * imagesPerRow) GT 0 ? (rowsPerPage * imagesPerRow) : settings.maxPhotosPerPage;
 		var maxPhotosPerRow = (imagesPerRow) GT 0 ? (imagesPerRow) : settings.maxPhotosPerRow;
-		
+
 		var settings = deserializeJSON(settingService.getSetting( "photo_gallery" ));
 		
 		// set sizes for layout and images on the current page
@@ -98,7 +103,6 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		var marginLeft      = oneImage ? "200px" : "0";
 		var marginTop       = "200px";
 		var imageWidth      = settings.imageSize[#displaySize#].resizeWidth;
-		var imageHeight     = settings.imageSize[#displaySize#].resizeHeight ;
 		
 		// calculate the number of pages and which page we are on
 		var totalPages = ceiling(galleryPhotos.recordCount / maxImages);
@@ -112,9 +116,16 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						margin: 0 auto 0 auto;
 					}
 
+					.cb-photogallery-content {
+						margin: 0 auto 0 auto;
+						width: 100%;
+					}
+
 					.cb-photogallery-tiles {
+						margin: 0 auto 0 auto;
 						overflow: hidden;
 						float: left;
+						margin-left: #marginLeft#;
 					}
 
 					.cb-photogallery-tile {
@@ -124,8 +135,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						-moz-box-shadow: 0 0 7px rgba(0, 0, 0, 0.5);
 						box-shadow: 0 0 7px rgba(0, 0, 0, 0.5);
 						position: relative;
-						width: #imageWidth#px;
-						margin: 0 20px 20px 0;
+						margin: 10px;
 						background-color: ##fff;
 					}
 					
@@ -137,7 +147,6 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						display: block;
 						overflow: hidden;
 						position: relative;
-						width: #imageWidth#px;
 						border-radius: 3px;
 					}
 
@@ -145,15 +154,15 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						font-size: 32px;
 					}
 
-					.cb-photogallery-previcon, .cb-photogallery-nexticon {
-						float: left;
-					}
-
 					.cb-photogallery-previcon {
-						margin-left: #marginLeft#;
+						float: left;
 						margin-right: 20px;
 					}
 					
+					.cb-photogallery-nexticon {
+						float: right;
+					}
+
 					.cb-photogallery-previcon,
 					.cb-photogallery-nexticon {
 						margin-top: #marginTop#;
@@ -207,21 +216,22 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 			');
 
 			wireArgs = {
+				galleryName = arguments.title,
 				mediaPathExpanded = mediaPathExpanded,
 				URL = event.getCurrentRoutedURL(),
-				filter = arguments.filter,
-				sortOrder = sortOrder,
 				galleryPath = galleryPath,
 				startImage = startImage,
 				maxImages = maxImages,
 				totalPages = totalPages,
+				galleryArray = galleryArray,
 				imageCount = galleryPhotos.recordCount,
 				class = arguments.class,
 				navPosition = navPosition,
 				showOnPage = showOnPage,
 				maxImgPerRow = imagesPerRow,
-				displaySize = displaySize,
-				oneImage = oneImage
+				oneImage = oneImage,
+				smallImageWidth = settings.imageSize["small"].resizeWidth,
+				normalImageWidth = settings.imageSize["normal"].resizeWidth
 			};
 
 			// Generate the HTML for the gallery
