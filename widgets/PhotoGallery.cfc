@@ -100,8 +100,6 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		var displaySize     = oneImage ? "normal" : "small";
 		var maxImages       = oneImage ? 1 : maxPhotosPerPage;
 		var maxImagesPerRow = oneImage ? 1 : maxPhotosPerRow;
-		var marginLeft      = oneImage ? "200px" : "0";
-		var marginTop       = "200px";
 		var imageWidth      = settings.imageSize[#displaySize#].resizeWidth;
 		
 		// calculate the number of pages and which page we are on
@@ -125,7 +123,6 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						margin: 0 auto 0 auto;
 						overflow: hidden;
 						float: left;
-						margin-left: #marginLeft#;
 					}
 
 					.cb-photogallery-tile {
@@ -161,11 +158,6 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					
 					.cb-photogallery-nexticon {
 						float: right;
-					}
-
-					.cb-photogallery-previcon,
-					.cb-photogallery-nexticon {
-						margin-top: #marginTop#;
 					}
 					
 					.cb-photogallery-previcon .cb-photogallery-prevlink, 
@@ -223,14 +215,16 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 				startImage = startImage,
 				maxImages = maxImages,
 				totalPages = totalPages,
+				rowsPerPage = rowsPerPage,
 				galleryArray = galleryArray,
 				imageCount = galleryPhotos.recordCount,
 				class = arguments.class,
 				navPosition = navPosition,
 				showOnPage = showOnPage,
-				maxImgPerRow = imagesPerRow,
+				maxImagesPerRow = imagesPerRow,
 				oneImage = oneImage,
-				smallImageWidth = settings.imageSize["small"].resizeWidth,
+				smallImageWidth  = settings.imageSize["small"].resizeWidth,
+				smallImageHeight = settings.imageSize["small"].resizeHeight,
 				normalImageWidth = settings.imageSize["normal"].resizeWidth
 			};
 
