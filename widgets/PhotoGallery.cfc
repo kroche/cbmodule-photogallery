@@ -126,23 +126,29 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 			writeOutput('
 				<style>
 					.cb-photogallery {
-						margin: 0 auto 0 auto;
+						margin: 0;
 					}
 
 					.cb-photogallery-tiles {
 						overflow: hidden;
 						float: left;
+						max-width: 1020px;
+					}
+
+					.cb-photogallery-tile-outer {
+						float: left;
+						height: #imageHeight#px;
+						margin: 10px;
 					}
 
 					.cb-photogallery-tile {
 						float: left;
-						border-radius: 3px;
+						border-radius: 4px;
 						-webkit-box-shadow: 0 0 7px rgba(0, 0, 0, 0.5);
 						-moz-box-shadow: 0 0 7px rgba(0, 0, 0, 0.5);
 						box-shadow: 0 0 7px rgba(0, 0, 0, 0.5);
 						position: relative;
 						width: #imageWidth#px;
-						margin: 0 20px 20px 0;
 						background-color: ##fff;
 					}
 					
@@ -155,25 +161,26 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						overflow: hidden;
 						position: relative;
 						width: #imageWidth#px;
-						border-radius: 3px;
+						border-radius: 4px;
 					}
 
 					.fa-2xl {
 						font-size: 32px;
 					}
 
-					.cb-photogallery-previcon, .cb-photogallery-nexticon {
-						float: left;
-					}
-
 					.cb-photogallery-previcon {
 						margin-left: #marginLeft#;
-						margin-right: 20px;
+						margin-right: 10px;
+					}
+					
+					.cb-photogallery-nexticon {
+						margin-left: 10px;
 					}
 					
 					.cb-photogallery-previcon,
 					.cb-photogallery-nexticon {
 						margin-top: #marginTop#;
+						float: left;
 					}
 					
 					.cb-photogallery-previcon .cb-photogallery-prevlink, 
@@ -248,24 +255,28 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 
 			var newline = "";
 			for (var x=startRow; (x lte startRow + maxRows - 1) and (x lte galleryPhotos.recordcount); x++) {
-				if (maxPhotosPerRow gt 0){
-					newline = (x MOD maxPhotosPerRow) eq 1 ? "cb-photogallery-newline" : "";
-				}
+				//if (maxPhotosPerRow gt 0){
+				//	newline = (x MOD maxPhotosPerRow) eq 1 ? "cb-photogallery-newline" : "";
+				//}
 				if( showOnPage ){
 					writeOutput('
+					<div class="cb-photogallery-tile-outer">
 						<div class="cb-photogallery-tile #newline#">
 							<a href="#cgi.path_info#?startRow=#x#&oneimage=1" title="#galleryPhotos.name[x]#" class="cb-photogallery-link">
 								<img src="#galleryPath#/#displaySize#/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" alt="#galleryPhotos.name[x]#" class="cb-photogallery-image" rel="group">
 							</a>
 						</div>
+					</div>
 					');
 				}else{
 					writeOutput('
+					<div class="cb-photogallery-tile-outer">
 						<div class="cb-photogallery-tile #newline#">
 							<a href="#galleryPath#/normal/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" class="cb-photogallery-link">
 								<img src="#galleryPath#/small/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" alt="#galleryPhotos.name[x]#" class="cb-photogallery-image" rel="group">
 							</a>
 						</div>
+					</div>
 					');
 				}
 			}
