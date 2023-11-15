@@ -40,7 +40,7 @@ component
 		notnull="false"
 		ormtype="integer"
 		default="0";
-		
+
 	/**
 	 * The width of the image
 	 */
@@ -50,7 +50,7 @@ component
 		notnull="false"
 		ormtype="integer"
 		default="0";
-		
+
 	/**
 	 * The height of the image
 	 */
@@ -60,7 +60,7 @@ component
 		notnull="false"
 		ormtype="integer"
 		default="0";
-		
+
 	/**
 	 * The crop X position of the image
 	 */
@@ -100,7 +100,37 @@ component
 		notnull="false"
 		ormtype="integer"
 		default="0";
+
+	/**
+	 * The original filename of the image
+	 */
+	property
+		name   ="originalName"
+		column ="originalName"
+		notnull="false"
+		length ="8000"
+		default="";
 		
+	/**
+	 * The server filename of the image
+	 */
+	property
+		name   ="serverFileName"
+		column ="serverFileName"
+		notnull="false"
+		length ="8000"
+		default="";
+
+	/**
+	 * The metadata from the image
+	 */
+	property
+		name   ="metadata"
+		column ="metadata"
+		notnull="false"
+		length ="8000"
+		default="";
+
 
 	/* *********************************************************************
 	 **							NON PERSISTED PROPERTIES
@@ -111,32 +141,49 @@ component
 	 **							CONSTRAINTS
 	 ********************************************************************* */
 
-	this.constraints[ "description" ] = { required : false, size : "1..8000" };
-	this.constraints[ "order" ]       = { required : true,  type : "numeric" };
-	this.constraints[ "width" ]       = { required : true,  type : "numeric" };
-	this.constraints[ "height" ]      = { required : true,  type : "numeric" };
-	this.constraints[ "cropXpos" ]    = { required : false, type : "numeric" };
-	this.constraints[ "cropYpos" ]    = { required : false, type : "numeric" };
-	this.constraints[ "cropWidth" ]   = { required : false, type : "numeric" };
-	this.constraints[ "cropHeight" ]  = { required : false, type : "numeric" };
+	this.constraints[ "description" ]    = { required : false, size : "1..8000" };
+	this.constraints[ "order" ]          = { required : true,  type : "numeric" };
+	this.constraints[ "width" ]          = { required : true,  type : "numeric" };
+	this.constraints[ "height" ]         = { required : true,  type : "numeric" };
+	this.constraints[ "cropXpos" ]       = { required : false, type : "numeric" };
+	this.constraints[ "cropYpos" ]       = { required : false, type : "numeric" };
+	this.constraints[ "cropWidth" ]      = { required : false, type : "numeric" };
+	this.constraints[ "cropHeight" ]     = { required : false, type : "numeric" };
+	this.constraints[ "originalName" ]   = { required : false, size : "1..8000" };
+	this.constraints[ "serverFileName" ] = { required : false, size : "1..8000" };
+	this.constraints[ "metadata" ]       = { required : false, size : "1..8000" };
 
 	/* *********************************************************************
 	 **							CONSTRUCTOR
 	 ********************************************************************* */
 
 	function init(){
-		appendToMemento( [ "description", "order", "width", "height", "cropXpos", "cropYpos", "cropWidth", "cropHeight" ], "defaultIncludes" );
+		appendToMemento( [ "description", "order", "width", "height", "cropXpos", "cropYpos", "cropWidth", "cropHeight", "originalName", "serverFileName", "metadata" ], "defaultIncludes" );
 
 		super.init();
 
+		variables.id              = createUUID();
 		variables.categories      = [];
 		variables.customFields    = [];
-		variables.metadata        = [];
+		variables.renderedContent = "";
+		variables.renderedExcerpt = "";
 		variables.allowComments   = true;
 		variables.createdDate     = now();
+		variables.layout          = "images";
 		variables.contentType     = "Image";
 		variables.order           = 0;
-
+		variables.description     = "";
+		variables.width           = 0;
+		variables.height          = 0;
+		variables.cropXpos        = 0;
+		variables.cropYpos        = 0;
+		variables.cropWidth       = 0;
+		variables.cropHeight      = 0;
+		variables.originalName    = "";
+		variables.serverFileName  = "";
+		variables.metadata        = "";
+		
+writedump(var=getId(), label="getContentId() in image object line 175", abort="1");
 		return this;
 	}
 
@@ -145,6 +192,12 @@ component
 	 ********************************************************************* */
 
 	boolean function isCropped(){
+		if (    cropWidth  LT width
+			or  cropHeight LT height
+			){
+			return true;
+		}
+		
 		return false;
 	}
 
@@ -167,6 +220,25 @@ component
 		}
 
 		return variables.renderedExcerpt;
+	}
+
+	// TODO: It may be best to provide a range of functions to output several different sized images.
+	//       Each different template may require different sized images
+	//       The images could be cached in the required sizes at upload time
+	//       A process to create a new set may be needed when the template changes
+	
+	any function renderSmall(){
+		return 1;
+	}
+	
+	
+	any function renderMedium(){
+		return 1;
+	}
+	
+	
+	any function renderLarge(){
+		return 1;
 	}
 
 
@@ -201,6 +273,7 @@ component
 		// do core cloning
 		return super.clone( argumentCollection = arguments );
 	}
+
 
 /* TODO: May need to provide alternatives for the following methods in BaseContent */
 	/**

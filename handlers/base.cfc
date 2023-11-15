@@ -12,10 +12,10 @@ component{
 		prc.moduleRoot = event.getModuleRoot( "photoGallery" );
 
 		// Exit points
-		prc.xehGalleries = "gallery.index";
+		prc.xehGalleries     = "gallery.index";
 		prc.xehGalleriesSave = "gallery.saveGalleries";
-		prc.xehSettings = "settings.index";
-		prc.xehSettingsSave = "settings.saveSettings";
+		prc.xehSettings      = "settings.index";
+		prc.xehSettingsSave  = "settings.saveSettings";
 
 		// Activate the module tab and 'Photo Gallery' menu contribution
 		prc.tabModules = true;
