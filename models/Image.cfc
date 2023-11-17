@@ -42,10 +42,20 @@ component
 		default="0";
 
 	/**
+	 * The fileType of the image
+	 */
+	property
+		name   ="fileType"
+		column ="fileType"
+		notnull="false"
+		ormtype="varchar"
+		default="";
+
+	/**
 	 * The width of the image
 	 */
 	property
-		name   ="width" 
+		name   ="width"
 		column ="width"
 		notnull="false"
 		ormtype="integer"
@@ -55,7 +65,7 @@ component
 	 * The height of the image
 	 */
 	property
-		name   ="height" 
+		name   ="height"
 		column ="height"
 		notnull="false"
 		ormtype="integer"
@@ -65,7 +75,7 @@ component
 	 * The crop X position of the image
 	 */
 	property
-		name   ="cropXpos" 
+		name   ="cropXpos"
 		column ="cropXpos"
 		notnull="false"
 		ormtype="integer"
@@ -75,7 +85,7 @@ component
 	 * The crop Y position of the image
 	 */
 	property
-		name   ="cropYpos" 
+		name   ="cropYpos"
 		column ="cropYpos"
 		notnull="false"
 		ormtype="integer"
@@ -85,7 +95,7 @@ component
 	 * The crop width of the image
 	 */
 	property
-		name   ="cropWidth" 
+		name   ="cropWidth"
 		column ="cropWidth"
 		notnull="false"
 		ormtype="integer"
@@ -95,7 +105,7 @@ component
 	 * The crop height of the image
 	 */
 	property
-		name   ="cropHeight" 
+		name   ="cropHeight"
 		column ="cropHeight"
 		notnull="false"
 		ormtype="integer"
@@ -143,6 +153,7 @@ component
 
 	this.constraints[ "description" ]    = { required : false, size : "1..8000" };
 	this.constraints[ "order" ]          = { required : true,  type : "numeric" };
+	this.constraints[ "fileType" ]       = { required : false, size : "1..20"   };
 	this.constraints[ "width" ]          = { required : true,  type : "numeric" };
 	this.constraints[ "height" ]         = { required : true,  type : "numeric" };
 	this.constraints[ "cropXpos" ]       = { required : false, type : "numeric" };
@@ -158,11 +169,10 @@ component
 	 ********************************************************************* */
 
 	function init(){
-		appendToMemento( [ "description", "order", "width", "height", "cropXpos", "cropYpos", "cropWidth", "cropHeight", "originalName", "serverFileName", "metadata" ], "defaultIncludes" );
+		appendToMemento( [ "description", "order", "fileType", "width", "height", "cropXpos", "cropYpos", "cropWidth", "cropHeight", "originalName", "serverFileName", "metadata" ], "defaultIncludes" );
 
 		super.init();
 
-		variables.id              = createUUID();
 		variables.categories      = [];
 		variables.customFields    = [];
 		variables.renderedContent = "";
@@ -172,6 +182,7 @@ component
 		variables.layout          = "images";
 		variables.contentType     = "Image";
 		variables.order           = 0;
+		variables.fileType        = "";
 		variables.description     = "";
 		variables.width           = 0;
 		variables.height          = 0;
@@ -182,8 +193,6 @@ component
 		variables.originalName    = "";
 		variables.serverFileName  = "";
 		variables.metadata        = "";
-		
-writedump(var=getId(), label="getContentId() in image object line 175", abort="1");
 		return this;
 	}
 

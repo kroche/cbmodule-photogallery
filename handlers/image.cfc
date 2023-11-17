@@ -1,5 +1,5 @@
 /**
- * I am the image handler
+ * I am the image handler - available to all users to display images
  *
  * - show a page of images
  *		get: /index/[n]  n=number of images to display
@@ -26,13 +26,6 @@ component{
 	}
 
 	/**
-	* new image
-	*/
-	function new( event, rc, prc ){
-		event.setView( "image/new" );
-	}
-
-	/**
 	* show an image
 	*/
 	function show( event, rc, prc ){
@@ -44,35 +37,5 @@ component{
 		abort;
 	}
 
-	/**
-	* create
-	*/
-	function create( event, rc, prc ){
-		// TODO: Check who is logged on and reject if not a Site Author, Manager or Administrator
-
-		// Upload the images here
-		local.files = fileUploadAll(getTempDirectory(), "", "makeunique");
-		//writeDump(local.files); abort;
-
-		// TODO: if it is a zip unzip it
-
-		// loop over the files
-		for (i = 1; i <= arrayLen(local.files); i++) {
-			local.oPost = populateModel( "Post" );
-			local.oPost.setUserId( auth().getUserId() );
-			local.oPost.setType( "image" );
-			local.oPost.setFileType( local.files[i].serverfileext );
-			local.oPost.setClassification( "unknown" );
-
-			imageService.saveUploadedImage(local.files[i], local.oPost);
-    		//fileMove("#local.files[i].serverDirectory#/#local.files[i].serverFile#", imageService.makeImageFilePath(local.oPost.getId(), local.files[i].serverfileext));
-			postService.create( local.oPost );
-		}
-		
-		// TODO: create resized versions of the uplaoded image 
-
-		messagebox.info( "Image uploaded!" );
-		relocate( URI="/posts" );
-	}
 }
 

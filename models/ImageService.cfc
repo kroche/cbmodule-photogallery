@@ -1,7 +1,7 @@
 /**
  * I am an ImageService Model Object
  */
-component singleton accessors="true"{
+component extends="modules.contentbox.models.content.ContentService" singleton accessors="true"{
 	
 	// Properties
 	property name="populator" inject="wirebox:populator";
@@ -11,24 +11,46 @@ component singleton accessors="true"{
 	 */
 	ImageService function init(){
 		// TODO: Change these lines so that they use a config entry
-        variables.imageStore = "D:/PhotoShare";
-        variables.imageNotFound = "D:/PhotoShare/imageNotFound.jpg";
+        variables.imageStore     = "D:/PhotoShare";
+        variables.tempImageStore = "D:/PhotoShare/temp"
+        variables.imageNotFound  = "D:/PhotoShare/imageNotFound.jpg";
+        
+        super.init( entityName = "cbImage", useQueryCaching = true );
 		return this;
 	}
 
     /**
-	 * return the path to the root of the iamge store
+	 * return the path to the root of the temporary image store
 	 */
 	// TODO: make this a private function again by moving code from the controller	
 	function getTempImageDirectory(){
-		return variables.imageStore & "/temp/";
+		return variables.tempImageStore & "/";
+	}
+	
+	/**
+	 * return the path to the root of the iamge store
+	 */
+	// TODO: make this a private function again by moving code from the controller	
+	function getImageDirectory(){
+		return variables.imageStore & "/";
 	}
 
     /**
 	 * get a path to the image using the ID (uuid) of the image
+	 *
+	 * @imageId      The imageId of the image
+	 * @fileType     The fileType of the image
+	 * @size         The size of the image or "original"
+	 * @temp         "True" If the image is in the temporary storage
+	 *
 	 */
-    private function getImageFilePath( required imageId, fileType, size ){
-		local.path = getTempImageDirectory() & "/" & left(arguments.imageId, 3) & "/" & mid(arguments.imageId, 4, 3) & "/" & mid(arguments.imageId, 7, 3) & "/";
+    private function getImageFilePath( required imageId, fileType, size, boolean temp=false ){
+    	if ( temp ) {
+    		local.path = getTempImageDirectory() & "/" & left(arguments.imageId, 3) & "/" & mid(arguments.imageId, 4, 3) & "/" & mid(arguments.imageId, 7, 3) & "/";
+    	}else{
+    		local.path = getImageDirectory() & "/" & left(arguments.imageId, 3) & "/" & mid(arguments.imageId, 4, 3) & "/" & mid(arguments.imageId, 7, 3) & "/";
+    	}
+		
 		if( !directoryExists(local.path) ){
 			directoryCreate(local.path);
 		}
@@ -42,6 +64,20 @@ component singleton accessors="true"{
 		return local.path;
 	}
 
+	/**
+	 * Save an image
+	 *
+	 * @image        The entry to save or update
+	 *
+	 * @return Saved entry
+	 */
+	function save( required any image ){
+		oImage = super.save( arguments.image );
+writedump(var=oImage, label="oImage after super.save() ImageService line 76", abort="1");
+		return oImage;
+	}
+
+
     /**
 	 * save an uploaded image using the ID (uuid) of the image
 	 */
@@ -54,12 +90,12 @@ component singleton accessors="true"{
     }
 
 	/**
-	 * show an image using the ID (uuid) of the image and the size
+	 * show an image using the contentID of the image and the size
 	 */
-    function showImage( required imageId, size ){
+    function showImage( required contentID, size ){
         local.image = queryExecute(
             "SELECT fileType FROM `posts` WHERE `type` = 'image' AND id = ?",
-            [ imageId ],
+            [ contentID ],
             { returntype = "array" });
         if ( arrayLen(local.image) ){
             local.path = getImageFilePath( arguments.imageId, local.image[1].fileType, arguments.size );
