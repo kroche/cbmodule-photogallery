@@ -1,0 +1,8 @@
+{
+  "name" : "Photo Gallery",
+  "slug" : "photogallery",
+  "version" : "3.0.0",
+  "scripts" : {
+	"migrate" : "2023_11_26_105100_v3_Add_Media.cfc"
+  }
+}

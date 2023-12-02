@@ -1,41 +1,39 @@
 /**
- * I am the image handler - available to all users to display images
+ * I am the media handler - available to all users to display media
  *
- * - show a page of images
- *		get: /index/[n]  n=number of images to display
- * - show the image upload page
+ * - show a page of media
+ *		get: /index/[n]  n=number of media to display
+ * - show the media upload page
  *      get: /new
- * - display an image
- *		get: /show/[id]  id=id of the image to be displayed
- * - upload an image or a zip of images
+ * - display an media
+ *		get: /show/[id]  id=id of the media to be displayed
+ * - upload an media or a zip of media
  * 		post: /create/
  
  */
 component{
 	
-	property name="imageService" 	inject="ImageService";
+	property name="mediaService" 	inject="MediaService";
 	property name="messagebox" 		inject="MessageBox@cbmessagebox";
 
 	/**
 	* index
 	*/
-	// TODO: Add criteria of images to show
+	// TODO: Add criteria of media to show
 	function index( event, rc, prc ){
-		prc.aImages = imageService.getAll();
-		event.setView( "image/index" );
+		prc.aMedia = mediaService.getAll();
+		event.setView( "media/index" );
 	}
 
 	/**
-	* show an image
+	* show media object
 	*/
 	function show( event, rc, prc ){
 		if((rc.size ?: "") neq ""){
-			imageService.showImage(rc.id, rc.size);
+			mediaService.showMedia(rc.id, rc.size);
 		}else{
-			imageService.showImage(rc.id);
+			mediaService.showMedia(rc.id);
 		}
 		abort;
 	}
-
 }
-

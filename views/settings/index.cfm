@@ -16,7 +16,7 @@
 
 					<div class="tabbable tabs-left">
 						<ul class="nav nav-tabs">
-							<li class="active"><a href="##images" data-toggle="tab"><i class="fa fa-image"></i> Images</a></li>
+							<li class="active"><a href="##media" data-toggle="tab"><i class="fa fa-image"></i> Media</a></li>
 
 							<li><a href="##folders" data-toggle="tab"><i class="fa fa-folder-open"></i> Folders</a></li>
 
@@ -26,55 +26,55 @@
 						</ul>
 
 						<div class="tab-content">
-							<!--- Settings: Images --->
-							<div class="tab-pane active" id="images">
+							<!--- Settings: Media --->
+							<div class="tab-pane active" id="media">
 								#html.startForm(action="#cb.buildModuleLink('PhotoGallery',prc.xehSettingsSave)#",name="settingsForm")#
-								#html.startFieldset(legend="<i class='icon-picture icon-large'></i> Images (Small)")#
+								#html.startFieldset(legend="<i class='icon-picture icon-large'></i> Media (Small)")#
 
 								<div class="alert alert-info clearfix">
 									<i class="fa fa-info-circle fa-lg fa-2x pull-left"></i>
-									Changing image sizes will not resize gallery images already processed.  Settings will take effect for all images going forward.
+									Changing media sizes will not resize gallery media already processed.  Settings will take effect for all media going forward.
 								</div>
 
 								<div class="form-group">
-									#html.textField(name="imageSizeSmallResizeWidth", label="Resize Width:", value="#prc.settings.imageSize.small.resizeWidth#", class="form-control", help="This is some help text!")#
+									#html.textField(name="mediaSizeSmallResizeWidth", label="Resize Width:", value="#prc.settings.mediaSize.small.resizeWidth#", class="form-control", help="This is some help text!")#
 								</div>
 
 								<div class="form-group">
-									#html.textField(name="imageSizeSmallResizeHeight", label="Resize Height:", value="#prc.settings.imageSize.small.resizeHeight#", class="form-control")#
+									#html.textField(name="mediaSizeSmallResizeHeight", label="Resize Height:", value="#prc.settings.mediaSize.small.resizeHeight#", class="form-control")#
 								</div>
 
 								<div class="form-group">
-									#html.textField(name="imageSizeSmallCropWidth", label="Crop Width:", value="#prc.settings.imageSize.small.cropWidth#", class="form-control")#
+									#html.textField(name="mediaSizeSmallCropWidth", label="Crop Width:", value="#prc.settings.mediaSize.small.cropWidth#", class="form-control")#
 								</div>
 
 								<div class="form-group">
-									#html.textField(name="imageSizeSmallCropHeight", label="Crop Height:", value="#prc.settings.imageSize.small.cropHeight#", class="form-control")#
+									#html.textField(name="mediaSizeSmallCropHeight", label="Crop Height:", value="#prc.settings.mediaSize.small.cropHeight#", class="form-control")#
 								</div>
 
 								#html.endFieldSet()#
 
-								#html.startFieldset(legend="<i class='icon-picture icon-large'></i> Images (Normal)")#
+								#html.startFieldset(legend="<i class='icon-picture icon-large'></i> Media (Normal)")#
 
 								<div class="alert alert-info clearfix">
 									<i class="fa fa-info-circle fa-lg fa-2x pull-left"></i>
-									Changing image sizes will not resize gallery images already processed.  Settings will take effect for all images going forward.
+									Changing media sizes will not resize gallery media already processed.  Settings will take effect for all media going forward.
 								</div>
 
 								<div class="form-group">
-									#html.textField(name="imageSizeNormalResizeWidth", label="Resize Width:", value="#prc.settings.imageSize.normal.resizeWidth#", class="form-control")#
+									#html.textField(name="mediaSizeNormalResizeWidth", label="Resize Width:", value="#prc.settings.mediaSize.normal.resizeWidth#", class="form-control")#
 								</div>
 
 								<div class="form-group">
-									#html.textField(name="imageSizeNormalResizeHeight", label="Resize Height:", value="#prc.settings.imageSize.normal.resizeHeight#", class="form-control")#
+									#html.textField(name="mediaSizeNormalResizeHeight", label="Resize Height:", value="#prc.settings.mediaSize.normal.resizeHeight#", class="form-control")#
 								</div>
 
 								<div class="form-group">
-									#html.textField(name="imageSizeNormalCropWidth", label="Crop Width:", value="#prc.settings.imageSize.normal.cropWidth#", class="form-control")#
+									#html.textField(name="mediaSizeNormalCropWidth", label="Crop Width:", value="#prc.settings.mediaSize.normal.cropWidth#", class="form-control")#
 								</div>
 
 								<div class="form-group">
-									#html.textField(name="imageSizeNormalCropHeight", label="Crop Height:", value="#prc.settings.imageSize.normal.cropHeight#", class="form-control")#
+									#html.textField(name="mediaSizeNormalCropHeight", label="Crop Height:", value="#prc.settings.mediaSize.normal.cropHeight#", class="form-control")#
 								</div>
 
 								#html.endFieldSet()#
@@ -109,9 +109,9 @@
 									#html.label(class="control-label",field="moveOriginals",content="Move Originals:")#
 
 									<div class="controls">
-										<small>Images uploaded in their original sizes can be optionally stored in the photo gallery temp folder.  This is typically done to speed up galleries with large number of images.  The original images in the root folder are replaced with resized versions.</small><br/>
-										#html.radioButton(name="moveOriginals",checked=prc.settings.moveOriginals,value=true)# Yes
-										#html.radioButton(name="moveOriginals",checked=not prc.settings.moveOriginals,value=false)# No
+										<small>Media files uploaded in their original sizes can be optionally stored in the gallery temp folder.  This is typically done to speed up galleries with large number of files.  The original files in the root folder are replaced with resized versions.</small><br/>
+										#html.radioButton( name="moveOriginals", checked=prc.settings.moveOriginals,     value=true)# Yes
+										#html.radioButton( name="moveOriginals", checked=not prc.settings.moveOriginals, value=false)# No
 									</div>
 								</div>
 

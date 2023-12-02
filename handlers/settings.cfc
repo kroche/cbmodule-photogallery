@@ -18,21 +18,21 @@ component extends="base" {
 		var oSetting = settingService.findWhere( { name="photo_gallery" } );
 
 		// Get settings from user input
-		if(structKeyExists(rc,"imageSizeSmallResizeWidth")) {
+		if(structKeyExists(rc,"mediaSizeSmallResizeWidth")) {
 			incomingSettings = serializeJSON(
 				{
-					"imageSize" = {
+				"mediaSize" = {
 						"small" = {
-							"resizeWidth" = rc.imageSizeSmallResizeWidth,
-							"resizeHeight" = rc.imageSizeSmallResizeHeight,
-							"cropWidth" = rc.imageSizeSmallCropWidth,
-							"cropHeight" = rc.imageSizeSmallCropHeight
+							"resizeWidth" = rc.mediaSizeSmallResizeWidth,
+							"resizeHeight" = rc.mediaSizeSmallResizeHeight,
+							"cropWidth" = rc.mediaSizeSmallCropWidth,
+							"cropHeight" = rc.mediaSizeSmallCropHeight
 						},
 						"normal" = {
-							"resizeWidth" = rc.imageSizeNormalResizeWidth,
-							"resizeHeight" = rc.imageSizeNormalResizeHeight,
-							"cropWidth" = rc.imageSizeNormalCropWidth,
-							"cropHeight" = rc.imageSizeNormalCropHeight
+							"resizeWidth" = rc.mediaSizeNormalResizeWidth,
+							"resizeHeight" = rc.mediaSizeNormalResizeHeight,
+							"cropWidth" = rc.mediaSizeNormalCropWidth,
+							"cropHeight" = rc.mediaSizeNormalCropHeight
 						}
 					}
 				}

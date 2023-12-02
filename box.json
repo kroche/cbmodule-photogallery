@@ -5,4 +5,7 @@
 	"slug": "cbmodule-photogallery",
 	"type": "contentbox-modules",
 	"version": "2.0"
+	"scripts" : {
+		"migrate" : "2023_11_26_105100_v3_Add_Media.cfc",
+	}
 }

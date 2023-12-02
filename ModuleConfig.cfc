@@ -19,28 +19,37 @@ component {
 
 	function configure(){
 
+		//TODO:  Change so that each site can have its own settings
+		
+		//TODO:  Some settings for the registration module
+		//mediaStoreagePath         = "D:\PhotoShare",
+		//mediaTempStoreagePath     = "D:\PhotoShare\temp",
+		//mediaThumbnailWidth       = 150,
+			
+			
+
 		// module settings - stored in modules.name.settings
 		settings = {
-			galleryFolders = "",
-			allowedPhotoExtensions = "jpg,jpeg,bmp,gif,png",
-			galleryTempFolderName = "_photogallery",
-			gallerySmallFolderName = "small",
-			galleryNormalFolderName = "normal",
-			moveOriginals = true,
+			galleryFolders            = "",
+			allowedPhotoExtensions    = "jpg,jpeg,bmp,gif,png",
+			galleryTempFolderName     = "_photogallery",
+			gallerySmallFolderName    = "small",
+			galleryNormalFolderName   = "normal",
+			moveOriginals             = true,
 			galleryOriginalFolderName = "original",
-			conventionGalleryPath = "_photogalleries",
-			imageSize = {
+			conventionGalleryPath     = "_photogalleries",
+			mediaSize = {
 				small = {
-					resizeWidth = 150,
+					resizeWidth  = 150,
 					resizeHeight = 150,
-					cropWidth = 150,
-					cropHeight = 150
+					cropWidth    = 150,
+					cropHeight   = 150
 				},
 				normal = {
-					resizeWidth = 600,
+					resizeWidth  = 600,
 					resizeHeight = 600,
-					cropWidth = 0,
-					cropHeight = 0
+					cropWidth    = 0,
+					cropHeight   = 0
 				}
 			},
 			maxPhotosPerPage = 8
@@ -48,9 +57,10 @@ component {
 
 		// SES Routes
 		routes = [
-			{pattern="/", handler="gallery",action="index"},
+			{ pattern="/media/upload/", handler="media",   action="upload" },
+			{ pattern="/",              handler="gallery", action="index" },
 			// Convention Route
-			{pattern="/:handler/:action?"}
+			{ pattern="/:handler/:action?" }
 		];
 
 		// Interceptors

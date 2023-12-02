@@ -1,20 +1,20 @@
 /**
- * ContentBox Image Object
+ * ContentBox Media Object
  * Copyright: Kevin Roche
  * rochek@gmail.com
  * ---
- * I am an image entity designed for use with contentbox
+ * I am an media entity designed for use with contentbox
  */
 component
-	persistent        ="true"
-	entityname        ="cbImage"
-	table             ="cb_image"
-	batchsize         ="25"
-	cachename         ="cbImage"
-	cacheuse          ="read-write"
-	extends           ="modules.contentbox.models.content.BaseContent"
-	joinColumn        ="contentID"
-	discriminatorValue="Image"
+	persistent         = "true"
+	entityname         = "cbMedia"
+	table              = "cb_media"
+	batchsize          = "25"
+	cachename          = "cbMedia"
+	cacheuse           = "read-write"
+	extends            = "contentbox.models.content.BaseContent"
+	joinColumn         = "contentID"
+	discriminatorValue = "Media"
 {
 
 	/* *********************************************************************
@@ -22,130 +22,164 @@ component
 	 ********************************************************************* */
 
 	/**
-	 * The description of the image
+	 * The description of the media
 	 */
 	property
-		name   ="description"
-		column ="description"
-		notnull="false"
-		length ="8000"
-		default="";
+		name    = "description"
+		column  = "description"
+		notnull = "false"
+		length  = "8000"
+		default = "";
 
 	/**
 	 * The ordering numeric sequence
 	 */
 	property
-		name   ="order"
-		column ="order"
-		notnull="false"
-		ormtype="integer"
-		default="0";
+		name    = "order"
+		column  = "order"
+		notnull = "false"
+		ormtype = "integer"
+		default = "0";
 
 	/**
-	 * The fileType of the image
+	 * The fileType of the media
 	 */
 	property
-		name   ="fileType"
-		column ="fileType"
-		notnull="false"
-		ormtype="varchar"
-		default="";
+		name    = "fileType"
+		column  = "fileType"
+		notnull = "false"
+		ormtype = "varchar"
+		default = "";
 
 	/**
-	 * The width of the image
+	 * The mediaType
 	 */
 	property
-		name   ="width"
-		column ="width"
-		notnull="false"
-		ormtype="integer"
-		default="0";
+		name    = "mediaType"
+		column  = "mediaType"
+		notnull = "false"
+		ormtype = "varchar"
+		default = "";
 
 	/**
-	 * The height of the image
+	 * The width of the media
 	 */
 	property
-		name   ="height"
-		column ="height"
-		notnull="false"
-		ormtype="integer"
-		default="0";
+		name    = "width"
+		column  = "width"
+		notnull = "false"
+		ormtype = "integer"
+		default = "0";
 
 	/**
-	 * The crop X position of the image
+	 * The height of the media
 	 */
 	property
-		name   ="cropXpos"
-		column ="cropXpos"
-		notnull="false"
-		ormtype="integer"
-		default="0";
+		name    = "height"
+		column  = "height"
+		notnull = "false"
+		ormtype = "integer"
+		default = "0";
 
 	/**
-	 * The crop Y position of the image
+	 * The crop X position of the crop
 	 */
 	property
-		name   ="cropYpos"
-		column ="cropYpos"
-		notnull="false"
-		ormtype="integer"
-		default="0";
+		name    = "cropXpos"
+		column  = "cropXpos"
+		notnull = "false"
+		ormtype = "integer"
+		default = "0";
 
 	/**
-	 * The crop width of the image
+	 * The crop Y position of the crop
 	 */
 	property
-		name   ="cropWidth"
-		column ="cropWidth"
-		notnull="false"
-		ormtype="integer"
-		default="0";
+		name    = "cropYpos"
+		column  = "cropYpos"
+		notnull = "false"
+		ormtype = "integer"
+		default = "0";
 
 	/**
-	 * The crop height of the image
+	 * The crop width
 	 */
 	property
-		name   ="cropHeight"
-		column ="cropHeight"
-		notnull="false"
-		ormtype="integer"
-		default="0";
+		name    = "cropWidth"
+		column  = "cropWidth"
+		notnull = "false"
+		ormtype = "integer"
+		default = "0";
 
 	/**
-	 * The original filename of the image
+	 * The crop height
 	 */
 	property
-		name   ="originalName"
-		column ="originalName"
-		notnull="false"
-		length ="8000"
-		default="";
+		name    = "cropHeight"
+		column  = "cropHeight"
+		notnull = "false"
+		ormtype = "integer"
+		default = "0";
+
+	/**
+	 * The original filename of the media
+	 */
+	property
+		name    = "originalName"
+		column  = "originalName"
+		notnull = "false"
+		length  = "8000"
+		default = "";
 		
 	/**
-	 * The server filename of the image
+	 * The server filename of the media
 	 */
 	property
-		name   ="serverFileName"
-		column ="serverFileName"
-		notnull="false"
-		length ="8000"
-		default="";
+		name    = "serverFileName"
+		column  = "serverFileName"
+		notnull = "false"
+		length  = "8000"
+		default = "";
 
 	/**
-	 * The metadata from the image
+	 * The metadata from the media
 	 */
 	property
-		name   ="metadata"
-		column ="metadata"
-		notnull="false"
-		length ="8000"
-		default="";
+		name    = "metadata"
+		column  = "metadata"
+		notnull = "false"
+		length  = "8000"
+		default = "";
+
+	/**
+	 * The excerpt for this media. This can be empty.
+	 */
+	property
+		name    = "excerpt"
+		column  = "excerpt"
+		notnull = "false"
+		ormtype = "text"
+		default = ""
+		length  = "8000";
+
+	/**
+	 * This flag shows media item is in the temporary not permanent storage.
+	 */
+	property
+		name    = "inTempStorage"
+		column  = "inTempStorage"
+		notnull = "true"
+		ormtype = "boolean"
+		default = "true";
 
 
 	/* *********************************************************************
 	 **							NON PERSISTED PROPERTIES
 	 ********************************************************************* */
-
+	property
+		name       ="settingService"
+		inject     ="provider:settingService@contentbox"
+		persistent ="false";
 
 	/* *********************************************************************
 	 **							CONSTRAINTS
@@ -154,6 +188,7 @@ component
 	this.constraints[ "description" ]    = { required : false, size : "1..8000" };
 	this.constraints[ "order" ]          = { required : true,  type : "numeric" };
 	this.constraints[ "fileType" ]       = { required : false, size : "1..20"   };
+	this.constraints[ "mediaType" ]      = { required : false, size : "1..20"   };
 	this.constraints[ "width" ]          = { required : true,  type : "numeric" };
 	this.constraints[ "height" ]         = { required : true,  type : "numeric" };
 	this.constraints[ "cropXpos" ]       = { required : false, type : "numeric" };
@@ -169,7 +204,8 @@ component
 	 ********************************************************************* */
 
 	function init(){
-		appendToMemento( [ "description", "order", "fileType", "width", "height", "cropXpos", "cropYpos", "cropWidth", "cropHeight", "originalName", "serverFileName", "metadata" ], "defaultIncludes" );
+		appendToMemento( [ "description", "order", "fileType", "width", "height", "cropXpos", "cropYpos", "cropWidth", "cropHeight", "originalName", "serverFileName", "metadata", "inTempStorage" ], "defaultIncludes" );
+		
 
 		super.init();
 
@@ -179,8 +215,8 @@ component
 		variables.renderedExcerpt = "";
 		variables.allowComments   = true;
 		variables.createdDate     = now();
-		variables.layout          = "images";
-		variables.contentType     = "Image";
+		variables.layout          = "media";
+		variables.contentType     = "Media";
 		variables.order           = 0;
 		variables.fileType        = "";
 		variables.description     = "";
@@ -193,6 +229,12 @@ component
 		variables.originalName    = "";
 		variables.serverFileName  = "";
 		variables.metadata        = "";
+		
+		variables.settings        = {
+			mediaStoreagePath     = "D:\PhotoShare",
+			mediaTempStoreagePath = "D:\PhotoShare\temp",
+			mediaThumbnailWidth   = 150
+		};
 		return this;
 	}
 
@@ -230,26 +272,58 @@ component
 
 		return variables.renderedExcerpt;
 	}
-
-	// TODO: It may be best to provide a range of functions to output several different sized images.
-	//       Each different template may require different sized images
-	//       The images could be cached in the required sizes at upload time
-	//       A process to create a new set may be needed when the template changes
 	
+	/**
+	 * Create and save a thumbnail image for the media
+	 * TODO: Make it do video, pdfs and word docs too
+	 *
+	 * @size    The width in pixels of the thumbnail to be made
+	 */
+	any function createThumbnail ( required numeric size, any image ){
+		var thumbnailFileName = getImageFilename( arguments.size );
+		var imagePath         = inTempStorage ? variables.settings.mediaTempStoreagePath : variables.settings.mediaStoreagePath
+		
+		// TODO: use settings created in the Admin Module
+		//var oSetting = settingService.findWhere( { name="photo_gallery" } );
+		//var settings = deserializeJSON(oSetting.getValue());
+		if ( !structKeyExists( arguments, "image" ) ){
+			// read the image file
+			var image = imageRead( local.media.serverDirectory & "/" & getImageFilename() );
+		}
+		image.resize( variables.settings.mediaThumbnailWidth, "" );
+		image.write( destination=(imagePath & "/" & thumbnailFileName), quality=0.9, overwrite=true );
+
+		return thumbnailFileName
+	}
+
+	/**
+	 * Create a filename for a thumbnail image or smaller version of the media
+	 *
+	 * @size    The size of the thumbnail required
+	 */
+	string function getImageFilename ( string size="" ){
+		if ( arguments.size eq "" ) {
+			return serverFileName & "." & fileType;
+		}
+		return serverFileName & "_#arguments.size#." & fileType;
+	}
+
+	// TODO: Should we provide a range of functions to output several different sized media.
+	//       Each different template may require different sized media
+	//       The media could be cached in the required sizes at upload time or later when first needed
+	//       A process to create a new set will be needed when the template changes
+
 	any function renderSmall(){
 		return 1;
 	}
-	
-	
+
 	any function renderMedium(){
 		return 1;
 	}
-	
-	
+
 	any function renderLarge(){
 		return 1;
 	}
-
 
 	/**
 	 * Wipe primary key, and descendant keys, and prepare for cloning of entire hierarchies
@@ -322,7 +396,7 @@ component
 	 * Render content out using caching, etc.
 	 */
 	//any function renderContent(){}
-	// TODO: will need to return an image
+	// TODO: will need to return an image or video with title and descripotion
 
 	/**
 	 * Renders the content silently so no caching, or extra fluff is done, just content translation rendering.
