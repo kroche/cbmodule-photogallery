@@ -1,39 +1,27 @@
 /**
- * I am the media handler - available to all users to display media
+ * I am the media image handler - available to all users to display media
  *
- * - show a page of media
- *		get: /index/[n]  n=number of media to display
- * - show the media upload page
- *      get: /new
- * - display an media
- *		get: /show/[id]  id=id of the media to be displayed
- * - upload an media or a zip of media
- * 		post: /create/
- 
+ * - show a thumbnail or full size image of a media object
+ *		get: /index/:id
  */
 component{
 	
-	property name="mediaService" 	inject="MediaService";
-	property name="messagebox" 		inject="MessageBox@cbmessagebox";
+	property name="MediaService" inject="mediaService@photoGallery";
 
 	/**
-	* index
+	* return a thumbnail or image of a media object
 	*/
-	// TODO: Add criteria of media to show
 	function index( event, rc, prc ){
-		prc.aMedia = mediaService.getAll();
-		event.setView( "media/index" );
-	}
-
-	/**
-	* show media object
-	*/
-	function show( event, rc, prc ){
 		if((rc.size ?: "") neq ""){
-			mediaService.showMedia(rc.id, rc.size);
+			mediaService.showMediaImage(rc.id, rc.size);
 		}else{
-			mediaService.showMedia(rc.id);
+			mediaService.showMediaImage(rc.id);
 		}
+		abort;
+	}
+	
+	function temp( event, rc, prc ){
+		mediaService.showTempMediaImage( rc.fileName, rc.fileType, rc.size);
 		abort;
 	}
 }

@@ -109,7 +109,14 @@ component extends="modules.contentbox.modules.contentbox-admin.handlers.baseCont
 	 */
 	function upload( event, rc, prc ){
 		//arguments.adminPermission = "MEDIA_ADMIN,MEDIA_EDITOR,NEW_REGISTRATION";
-
+		local.result = {};
+		if ( !structKeyExists( session, "registrationData" ) ){
+			session.registrationData = { media = [] };
+			local.fileNumber = val(rc.fileNumber);
+		} else {
+			local.fileNumber = val(rc.fileNumber) + session.registrationData.media.len();
+		}
+		local.currentUploads = session.registrationData.media.len();
 		// Upload the media			// TODO: also allow zip files
 		local.files = fileUploadAll( mediaService.getTempMediaDirectory(), "", "makeunique");
 		// TODO: local.files will be an empty array if nothing was uploaded
@@ -190,7 +197,6 @@ IPTC Data
 			}
 //writedump(var=local.metaData, label="local.metaData", top=2, abort="1");
 
-//  getEXIFMetadata,getEXIFTag,getIptcMetadata,getIPTCTag
 
 			// Does prc contain oCurrentAuthor and oCurrentSite? In which case we can save the media object straight away.
 			local.saveMedia = prc.keyExists( "oCurrentAuthor" ) and prc.keyExists( "oCurrentSite" )
@@ -201,7 +207,7 @@ IPTC Data
 			local.cacheMedia = !local.saveMedia and prc.keyExists( "oCurrentSite" ) and variables.homeSiteList.listFindNoCase( prc.oCurrentSite.getSiteID() );
 // TODO: Remove temporary test code
 			//local.cacheMedia = true;
-//writedump(var=local.media, label="local.media", top=2);
+
 			local.mediaData = {
 				originalName   = local.media.clientFileName,
 				serverFileName = local.media.serverFileName,
@@ -222,32 +228,25 @@ IPTC Data
 				local.oMedia.setSite( prc.oCurrentSite );
 				local.oMedia.setCreator( prc.oCurrentAuthor );
 				local.result = MediaService.save( local.oMedia );
+				
+				//fileMove("#local.files[i].serverDirectory#/#local.files[i].serverFile#", mediaService.makeMediaFilePath(local.oPost.getId(), local.files[i].serverfileext));
 			}
 			if ( local.cacheMedia ) {
-				if ( !structKeyExists( session, "registrationData" ) ){
-					session.registrationData = { media = [] };
-				}
 				arrayAppend( session.registrationData.media, local.oMedia );
 			}
+
 			// create resized versions of the uploaded media 
-			
 			local.oMedia.createThumbnail( variables.thumbnailSize, local.img );
-
-			//local.thumbnailFileName  = local.media.serverDirectory & "/";
-			//local.thumbnailFileName &= local.media.serverFileName & "_#variables.thumbnailSize#.";
-			//local.thumbnailFileName &= local.media.serverFileExt;
-
-			//local.img.resize( variables.thumbnailSize,"");
-			//local.img.write( destination=local.thumbnailFileName, quality=0.9, overwrite=true);
-
-
-//fileMove("#local.files[i].serverDirectory#/#local.files[i].serverFile#", mediaService.makeMediaFilePath(local.oPost.getId(), local.files[i].serverfileext));
-
+			
+			// pass the result back to the page
+			local.result = {
+				"mediaCount" = local.fileNumber,
+				"imageURL"   = local.oMedia.getImageURL(150),
+				"message"    = "Upload Complete!"
+			};
 		}
-
-	//messagebox.info( "Media uploaded!" );
+		return local.result;
 	}
-
 
 	/**
 	 * Clone media

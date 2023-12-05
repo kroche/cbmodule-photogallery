@@ -281,7 +281,7 @@ component
 	 */
 	any function createThumbnail ( required numeric size, any image ){
 		var thumbnailFileName = getImageFilename( arguments.size );
-		var imagePath         = inTempStorage ? variables.settings.mediaTempStoreagePath : variables.settings.mediaStoreagePath
+		var imagePath         = inTempStorage ? variables.settings.mediaTempStoreagePath : variables.settings.mediaStoreagePath;
 		
 		// TODO: use settings created in the Admin Module
 		//var oSetting = settingService.findWhere( { name="photo_gallery" } );
@@ -293,7 +293,7 @@ component
 		image.resize( variables.settings.mediaThumbnailWidth, "" );
 		image.write( destination=(imagePath & "/" & thumbnailFileName), quality=0.9, overwrite=true );
 
-		return thumbnailFileName
+		return thumbnailFileName;
 	}
 
 	/**
@@ -307,22 +307,21 @@ component
 		}
 		return serverFileName & "_#arguments.size#." & fileType;
 	}
-
-	// TODO: Should we provide a range of functions to output several different sized media.
-	//       Each different template may require different sized media
-	//       The media could be cached in the required sizes at upload time or later when first needed
-	//       A process to create a new set will be needed when the template changes
-
-	any function renderSmall(){
-		return 1;
-	}
-
-	any function renderMedium(){
-		return 1;
-	}
-
-	any function renderLarge(){
-		return 1;
+	
+	/**
+	 * Create a URL for a thumbnail or image of the media
+	 *
+	 * @size    The size of the thumbnail required
+	 */
+	string function getImageURL ( string size="" ){
+		if ( getInTempStorage() ){
+			if ( listFindNoCase( "jpg,jpeg,png,gif", getFileType() ) ){
+				return "/image/temp/" & getServerFileName() & "/" & getFileType() & "/" & arguments.size;
+			} else {
+				return "/image/temp/" & getServerFileName() & "/jpg/" & arguments.size;
+			}
+		}
+		return "/image/" & getContentId() & "/" & getFileType() & "/" & arguments.size;
 	}
 
 	/**

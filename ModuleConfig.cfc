@@ -57,8 +57,6 @@ component {
 
 		// SES Routes
 		routes = [
-			{ pattern="/media/upload/", handler="media",   action="upload" },
-			{ pattern="/",              handler="gallery", action="index" },
 			// Convention Route
 			{ pattern="/:handler/:action?" }
 		];
