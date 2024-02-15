@@ -342,12 +342,14 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						image.addEventListener('mouseover', function(){
 // TODO: make this better!
 							this.title = title;
+							this.alt   = 'A sample description';
 						});
 
-						// Create an overlay and large image to show on click 
+						// Create an overlay and large image with title and description to show on click
 						image.addEventListener('click', function(e) {
 							// Create overlay div
 							let overlay = document.createElement('div');
+							let nextPosition = 40;
 							overlay.id = 'overlay';
 
 							// Set as fixed position 
@@ -359,10 +361,11 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 							overlay.style.bottom = 0;
 							overlay.style.background = 'rgba(0,0,0,0.5)';
 							overlay.style.display = 'flex';
-							overlay.style.alignItems = 'center';
+							//overlay.style.alignItems = 'center';
 							overlay.style.justifyContent = 'center';
+							
 							// ensure we are on top when on the editor preview page
-							overlay.style.zIndex = 9998;
+							overlay.style.zIndex = 9997;
 
 							document.body.appendChild(overlay);
 							// Check the size of the image and window and chose a size that fits
@@ -372,17 +375,36 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 							// Create large image
 							let largeImage = document.createElement('img');
 							largeImage.src = this.src;
-							largeImage.style.maxWidth = imgWidth + 'px';
+							largeImage.style.maxWidth  = imgWidth + 'px';
 							largeImage.style.maxHeight = imgHeight + 'px';
+							largeImage.style.position  = 'absolute';
+							largeImage.style.top       = (nextPosition) + 'px';
 							largeImage.id = 'overlayImage';
-							largeImage.style.zIndex = 9999;
-
+							largeImage.style.zIndex    = 9998;
 							// Add large image to overlay
 							overlay.appendChild(largeImage);
 
+							// Show the title and description below the image
+							let titleBox   = document.createElement('div');
+							titleBox.style.width           = imgWidth + 'px';
+							titleBox.style.minHeight       = '40px';
+							titleBox.style.paddingLeft     = '10px';
+							titleBox.style.position        = 'absolute';
+							nextPosition                   = overlay.lastChild.getBoundingClientRect().bottom;
+							titleBox.style.top             = (nextPosition) + 'px';
+							titleBox.style.backgroundColor = 'white';
+							titleBox.style.zIndex          = 9999;
+							titleBox.style.display         = 'block';
+							titleBox.style.textAlign       = 'center';
+							titleBox.innerHTML  = '<p>' + this.title + '</p>';
+							titleBox.innerHTML += '<p>' + this.alt + '</p>';
+
+							// Add title to overlay
+							overlay.appendChild(titleBox);
+
 							// Close the image on click
 							overlay.onclick = function() {
-							  document.body.removeChild(overlay);
+								document.body.removeChild(overlay);
 							}
 						});
 					});
