@@ -21,30 +21,38 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		return this;
 	}
 
+// TODO: create the folder list by querying a list for the chosen site
+// TODO: support a selecton of images by date, tags, category
+
+
 	/**
 	* Render a gallery
 	* @folder.hint     The folder (relative to the ContentBox content root) from which to list the gallery of photos.
 	* @filter.hint     A list of file extension filters to apply (*.jpg), use a | to separate multiple filters.
 	* @sort.hint       The sort field (Name, Size, DateLastModified)
+	* @sort.options        Name,Size,DateLastModified
 	* @order.hint      The sort order of the photos. (ASC/DESC) 
+	* @order.options       ASC,DESC
 	* @format.hint     The format to display the gallery. Choose from justified, square, cascade or single
+	* @format.options      justified,square,cascade,single
 	* @showInfo.hint   Defines where to show the image title. Choose from mouseOver, below or none.
+	* @showInfo.options    mouseOver,below,none
 	* @minHeight.hint  The Minimum Height of the gallery images in pixels (250) applies to justified format only
 	* @maxHeight.hint  The Maximum Height of the gallery images in pixels (350) applies to justified format only
 	* @minWidth.hint   The Minimum Width of the gallery images in pixels (300) applies to square, cascade or single formats only
 	* @spacing.hint    The gap in pixels bewteen images (5) applies to all formats
 	*/
 	any function renderIt(
-			string  folder,
-			string  filter    = "*",
-			string  sort      = "Name",
-			string  order     = "ASC",
-			string  format    = "justified",
-			string  showInfo  = "mouseOver",
-			numeric minHeight = 250,
-			numeric maxHeight = 350,
-			numeric minWidth  = 300,
-			numeric spacing   = 5
+			required string  folder,
+					 string  filter    = "*",
+			required string  sort      = "Name",
+			required string  order     = "ASC",
+			required string  format    = "justified",
+			required string  showInfo  = "mouseOver",
+			required numeric minHeight = 250,
+			required numeric maxHeight = 350,
+			required numeric minWidth  = 300,
+			required numeric spacing   = 5
 		){
 		var event = getRequestContext();
 		rc = event.getCollection();
@@ -55,6 +63,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 			startRow = 1;
 		};
 
+// TODO: database query to get the folders and images 
 		var relativePath = "";
 		var cbSettings = event.getValue(name="cbSettings",private=true);
 		var sortOrder = arguments.sort & " " & arguments.order;
@@ -87,7 +96,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 			return "Please specify a valid location for the image info in showInfo - mouseOver, below or none";
 		}
 
-		//security check - can't be higher than the media root
+		//security check - folder chosen must be below the media root
 		if(!findNoCase(mediaRoot, mediaPathExpanded)){
 			return "This widget is restricted to the ContentBox media root.  All photo galleries must be contained within that directory.";
 		}
@@ -104,7 +113,6 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		var galleryPhotos = qryGalleryPhotos.getResult();
 
 		var settings = deserializeJSON(settingService.getSetting( "photo_gallery" ));
-		//writedump(var=qryGalleryPhotos, label="qryGalleryPhotos", abort="1");
 
 		// loop over the images
 		var imageString = "images = [";
@@ -115,7 +123,6 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 			}
 		}
 		imageString &= ']';
-		//<img src="#galleryPath#/#displaySize#/#galleryPhotos.name[x]#" title="#galleryPhotos.name[x]#" alt="#galleryPhotos.name[x]#" class="cb-photogallery-image" rel="group">
 
 		// generate photo gallery
 		var rString = "";
@@ -133,33 +140,35 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					const minWidth  = #arguments.minWidth#;
 					const spacing   = #arguments.spacing#;
 					const format    = '#arguments.format#';
+					const showInfo  = '#arguments.showInfo#';
 
 					// where will we display the images
 					const gallery = document.querySelector('##gallery');
 
-					// TODO: Change so this is done with an ajax call
+// TODO: get the list of images, titles and descriptions with an ajax call
+
 					// Get an array of images from server
 					#imageString#
 
 					// call the chosen formatter
 					switch(format) {
 						case 'justified':
-							justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing );
+							justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo );
 							break;
 						case 'cascade':
-							cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing );
+							cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo );
 							break;
 						case 'single':
-							cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing );
+							cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo );
 							break;
 						default:
-							cascadeGallery( gallery, images, 'square', minHeight, maxHeight, minWidth, spacing );
+							cascadeGallery( gallery, images, 'square', minHeight, maxHeight, minWidth, spacing, showInfo );
 					}
 					// add mouseover and click events
-					addMouseEvents();
+					addMouseEvents( showInfo );
 				}
 
-				function justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing ) {
+				function justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo ) {
 					// Set variables to track current row width at max and min height
 					let rowMaxWidth = spacing;
 					let rowMinWidth = spacing;
@@ -178,7 +187,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					// Loop over the array of image URLs and create the HTML
 //TODO: Handle image title and description
 					images.forEach(imageURL => {
-						createImage( imageURL, gallery, null, spacing, true, 'A sample title', 'A sample description' );
+						createImage( imageURL, gallery, null, spacing, showInfo, 'A sample title', 'A sample description' );
 					})
 
 					// Greate an array of the div objects containg each img
@@ -213,17 +222,17 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 								currRow.push(container);
 								(rowMaxWidth += imgWidthResizeMax + spacing);
 								(rowMinWidth += imgWidthResizeMin + spacing);
-								
-								justifyRow(currRow, galleryWidth, rowMaxWidth, maxHeight, spacing);
-								
+
+								justifyRow(currRow, galleryWidth, rowMaxWidth, maxHeight, spacing, showInfo);
+
 								currRow = [];
 								rowMaxWidth = spacing;
 								rowMinWidth = spacing;
 							
 							} else {
 								// If it does not fit either way start a new row
-								justifyRow(currRow, galleryWidth, rowMaxWidth, maxHeight, spacing);
-				
+								justifyRow(currRow, galleryWidth, rowMaxWidth, maxHeight, spacing, showInfo);
+
 								// Start new row
 								currRow = [];
 								currRow.push(container);
@@ -233,27 +242,31 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						}
 					});
 					// Justify last row
-					justifyRow(currRow, galleryWidth, rowMaxWidth, maxHeight, spacing);
+					justifyRow(currRow, galleryWidth, rowMaxWidth, maxHeight, spacing, showInfo);
 				}
 
-				function justifyRow(row, galleryWidth, rowMaxWidth, maxHeight, spacing) {
+				function justifyRow(row, galleryWidth, rowMaxWidth, maxHeight, spacing, showInfo) {
 					let totalMargin      = (row.length + 1) * spacing;
 					let totalImageWidths = galleryWidth - totalMargin;
 					let resizeHeight     = Math.trunc(maxHeight * galleryWidth / rowMaxWidth);
-					let img = '';
-					let height = Math.min(maxHeight, resizeHeight);
-
+					let img              = '';
+					let height           = Math.min(maxHeight, resizeHeight);
+					let divHeight        = height;
+					if ( showInfo == 'below' ){
+						divHeight = height + 40;
+					}
+					// set the height of the divs and images in the row
 					row.forEach((imgDiv) => {
 						imgDiv.style.float = 'left';
-						imgDiv.style.height = height + 'px';
-						imgDiv.height = height + 'px';
+						imgDiv.style.height = divHeight + 'px';
+						imgDiv.height = divHeight + 'px';
 						img = imgDiv.firstElementChild;
 						img.style.height = height + 'px';
 						img.height = height + 'px';
 					});
 				}
 
-				function cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing ) {
+				function cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo ) {
 					// Initialise variables
 					let galleryHTML   = '';
 					let columnElement = 0;
@@ -295,24 +308,31 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 
 					let i = 0;
 					images.forEach(imageURL => {
+// TODO: choose the best size image based on maxHeight and minWidth
 						// find the shortest column
 						columnElement = findShortestColumn( gallery );
 						// add the image to the shortest column
 // TODO: handle image title and description
 						if ( format === 'square' ) {
-							createSquareImage( imageURL, columnElement, resizeWidth, spacing, true, 'A sample title', 'A sample description' );
+							createSquareImage( imageURL, columnElement, resizeWidth, spacing, showInfo, 'A sample title', 'A sample description' );
 						} else {
-							createImage( imageURL, columnElement, resizeWidth, spacing, true, 'A sample title', 'A sample description' );
+							createImage( imageURL, columnElement, resizeWidth, spacing, showInfo, 'A sample title', 'A sample description' );
 						}
 						// Make sure the title box does not push the element below down the column
-						columnElement.lastChild.style.maxHeight = columnElement.lastChild.firstChild.offsetHeight + 'px';
+						if ( showInfo != 'below' ){
+							columnElement.lastChild.style.maxHeight = columnElement.lastChild.firstChild.offsetHeight + 'px';
+						}
 					});
 				}
 
-				function createImage( imageURL, container, width, spacing, showTitleOnMouseOver, title, alt ) {
+// TODO: create classes for the HTML so we can style it with CSS
+				function createImage( imageURL, container, width, spacing, showInfo, title, alt ) {
 					let titleBox   = '';
-					if ( showTitleOnMouseOver ) {
-						titleBox  = '<div style=""min-height:40px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:none; text-align:center; top:-45px"">';
+					if ( showInfo == 'mouseOver' ) {
+						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:none; text-align:center; top:-45px;"">';
+						titleBox += '<p>' + title + '</p></div>';
+					}else if ( showInfo == 'below' ) {
+						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:block; text-align:center;"">';
 						titleBox += '<p>' + title + '</p></div>';
 					}
 					if ( width === null ) {
@@ -324,30 +344,35 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					}
 				}
 
-				function createSquareImage( img, column, width, spacing, showTitleOnMouseOver, title, alt ) {
+				function createSquareImage( img, column, width, spacing, showInfo, title, alt ) {
 					let titleBox   = '';
-					if ( showTitleOnMouseOver ) {
-						titleBox  = '<div style=""min-height:40px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:none; text-align:center; top:-45px"">';
+					let divHeight  = width;
+					if ( showInfo == 'mouseOver' ) {
+						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:none; text-align:center; top:-45px;"">';
 						titleBox += '<p>' + title + '</p></div>';
+					} else if ( showInfo == 'below' ) {
+						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:block; text-align:center;"">';
+						titleBox += '<p>' + title + '</p></div>';
+						divHeight  = width + 40;
 					}
-					column.innerHTML += '<div style=""width: ' + width + 'px; height: ' + width + 'px; margin-top: ' + spacing + 'px; margin-left:' + spacing + 'px; overflow: hidden;""><img src=""' + img + '"" title=""' + title + '"" alt=""' + alt + '""/>' + titleBox + '</div>';
-					let imgHeight = column.lastChild.lastChild.naturalHeight;
-					let imgWidth  = column.lastChild.lastChild.naturalWidth;
+					column.innerHTML += '<div style=""width: ' + width + 'px; height: ' + divHeight + 'px; margin-top: ' + spacing + 'px; margin-left:' + spacing + 'px; overflow: hidden;""><img src=""' + img + '"" style=""height:' + width + 'px;"" title=""' + title + '"" alt=""' + alt + '""/>' + titleBox + '</div>';
+					let imgHeight = column.lastChild.firstChild.naturalHeight;
+					let imgWidth  = column.lastChild.firstChild.naturalWidth;
 					let offset = 0;
-// TODO: handle position for manually or AI cropped images
+// TODO: choose square cropped images
 					if ( imgHeight < imgWidth ){
-						column.lastChild.lastChild.height = width;
-						column.lastChild.lastChild.width  = imgWidth * width / imgHeight;
-						column.lastChild.lastChild.style.position = 'relative';
+						column.lastChild.firstChild.height = width;
+						column.lastChild.firstChild.width  = imgWidth * width / imgHeight;
+						column.lastChild.firstChild.style.position = 'relative';
 						offset = (width - column.lastChild.lastChild.width) / 2;
-						column.lastChild.lastChild.style.left = offset + 'px';
+						column.lastChild.firstChild.style.left = offset + 'px';
 					} else if ( imgHeight > imgWidth ) {
-						column.lastChild.lastChild.style.width = width + 'px';
-						column.lastChild.lastChild.style.position = 'relative';
+						column.lastChild.firstChild.style.width = width + 'px';
+						column.lastChild.firstChild.style.position = 'relative';
 						offset = (width - column.lastChild.lastChild.height) / 2;
-						column.lastChild.lastChild.style.top = offset + 'px';
+						column.lastChild.firstChild.style.top = offset + 'px';
 					} else {
-						column.lastChild.lastChild.style.width = width + 'px';
+						column.lastChild.firstChild.style.width = width + 'px';
 					}
 				}
 
@@ -363,22 +388,24 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					return shortestColumn;
 				}
 
-				function addMouseEvents(){
+				function addMouseEvents( showInfo ){
 					// Get all the image elements
 					let images = document.querySelectorAll('##gallery img');
 
 					// Loop through each image  
 					images.forEach(function(image) {
 
+						if ( showInfo == 'mouseOver' ){
 						// Set the mouseover on each image to show the title
-						image.addEventListener('mouseover', function(e){
-							let titleBox = this.nextSibling;
-							titleBox.style.display = 'block';
-						});
-						image.addEventListener('mouseout', function(e){
-							let titleBox = this.nextSibling;
-							titleBox.style.display = 'none';
-						});
+							image.addEventListener('mouseover', function(e){
+								let titleBox = this.nextSibling;
+								titleBox.style.display = 'block';
+							});
+							image.addEventListener('mouseout', function(e){
+								let titleBox = this.nextSibling;
+								titleBox.style.display = 'none';
+							});
+						}
 
 						// Create an overlay and large image with title and description to show on click
 						image.addEventListener('click', function(e) {
@@ -407,6 +434,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 							imgWidth  = Math.min( image.naturalWidth,  window.innerWidth  );
 							imgHeight = Math.min( image.naturalHeight, window.innerHeight );
 
+// TODO: choose the best size image to show in larger image
 							// Create large image
 							let largeImage = document.createElement('img');
 							largeImage.src = this.src;
