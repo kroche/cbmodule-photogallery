@@ -127,6 +127,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		// generate photo gallery
 		var rString = "";
 		saveContent variable="rString" {
+
 			// HTML for the gallery
 			writeOutput('<div id="gallery" style="flex"></div>');
 
@@ -328,6 +329,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 
 				function createImage( imageURL, container, width, spacing, showInfo, title, alt ) {
 					let titleBox = createTitleBox( showInfo, title );
+// TODO: choose the best size image
 					if ( width === null ) {
 						// used for justified images
 						container.innerHTML += ('<div style=""margin-top: ' + spacing + 'px; margin-left: '+ spacing + 'px;""><img src=""' + imageURL + '"" title=""' + title + '"" alt=""' + alt + '""/>' + titleBox + '</div>');
@@ -344,10 +346,11 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					let imgHeight = column.lastChild.firstChild.naturalHeight;
 					let imgWidth  = column.lastChild.firstChild.naturalWidth;
 					let offset = 0;
-// TODO: choose the best size image (square) cropped images
+// TODO: choose the best size image
+// TODO: cut the length of the title to suit the width of the image
 					if ( imgHeight < imgWidth ){
 						let displayWidth = imgWidth * width / imgHeight;
-						offset = (width - displayWidth) / 2;
+						offset = ( width - displayWidth ) / 2;
 						column.lastChild.firstChild.style.height   = width + 'px';
 						column.lastChild.firstChild.style.maxWidth = displayWidth + 'px';
 						column.lastChild.firstChild.style.width    = displayWidth + 'px';
@@ -355,26 +358,31 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						column.lastChild.firstChild.style.left     = offset + 'px';
 					} else if ( imgHeight > imgWidth ) {
 						let displayHeight = imgHeight * width / imgWidth;
-						offset = (width - displayHeight) / 2;
+						offset = ( width - displayHeight ) / 2;
 						column.lastChild.firstChild.style.maxHeight = displayHeight + 'px';
 						column.lastChild.firstChild.style.height    = displayHeight + 'px';
 						column.lastChild.firstChild.style.width     = width + 'px';
 						column.lastChild.firstChild.style.position  = 'relative';
 						column.lastChild.firstChild.style.top       = offset + 'px';
+						column.lastChild.lastChild.style.top        = ( showInfo == 'below' ) ? ( 2 * offset) + 'px' : (( 2 * offset) - 45 ) + 'px';
+						
 					} else {
-						column.lastChild.firstChild.style.width = width + 'px';
+						column.lastChild.firstChild.style.width  = width + 'px';
+						column.lastChild.firstChild.style.height = width + 'px';
 					}
 				}
 
 				function createTitleBox ( showInfo, title ) {
-					let titleBox   = '';
-					if ( showInfo == 'mouseOver' ) {
-						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:none; text-align:center; top:-45px;"">';
-						titleBox += '<p>' + title + '</p></div>';
-					}else if ( showInfo == 'below' ) {
-						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:block; text-align:center;"">';
-						titleBox += '<p>' + title + '</p></div>';
+					if ( showInfo == 'none' ){
+						return '';
 					}
+					let titleBox   = '<div style=""min-height:40px; padding:1px 5px; position:relative; background-color:white; z-index:9990; text-align:center;';
+					if ( showInfo == 'mouseOver' ) {
+						titleBox += ' display:none; top:-40px;"">';
+					}else if ( showInfo == 'below' ) {
+						titleBox += ' display:block;"">';
+					}
+					titleBox += '<p>' + title + '</p></div>';
 					return titleBox;
 				}
 
