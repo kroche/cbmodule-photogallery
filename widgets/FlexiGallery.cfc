@@ -293,10 +293,11 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					// Create HTML for the columns
 					for ( let i = 0; i < colCount; i++ ){
 						// create each column as a div
+						galleryHTML += ('<div width=' + resizeWidth + 'px"" ');
 						if ( format === 'single' ) {
-							galleryHTML += ('<div id=""col_' + i + '"" width=' + resizeWidth + 'px"" style=""margin-left: ' + margin + 'px; margin-right: ' + margin + 'px; ""></div>');
+							galleryHTML += ('style=""margin-left: ' + margin + 'px; margin-right: ' + margin + 'px; ""></div>');
 						} else {
-							galleryHTML += ('<div id=""col_' + i + '"" width=' + resizeWidth + 'px"" style=""float: left;""></div>');
+							galleryHTML += ('style=""float: left;""></div>');
 						}
 						gallery.innerHTML = galleryHTML;
 						// initialise the height of images in each column
@@ -325,16 +326,8 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					});
 				}
 
-// TODO: create classes for the HTML so we can style it with CSS
 				function createImage( imageURL, container, width, spacing, showInfo, title, alt ) {
-					let titleBox   = '';
-					if ( showInfo == 'mouseOver' ) {
-						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:none; text-align:center; top:-45px;"">';
-						titleBox += '<p>' + title + '</p></div>';
-					}else if ( showInfo == 'below' ) {
-						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:block; text-align:center;"">';
-						titleBox += '<p>' + title + '</p></div>';
-					}
+					let titleBox = createTitleBox( showInfo, title );
 					if ( width === null ) {
 						// used for justified images
 						container.innerHTML += ('<div style=""margin-top: ' + spacing + 'px; margin-left: '+ spacing + 'px;""><img src=""' + imageURL + '"" title=""' + title + '"" alt=""' + alt + '""/>' + titleBox + '</div>');
@@ -345,35 +338,44 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 				}
 
 				function createSquareImage( img, column, width, spacing, showInfo, title, alt ) {
-					let titleBox   = '';
-					let divHeight  = width;
-					if ( showInfo == 'mouseOver' ) {
-						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:none; text-align:center; top:-45px;"">';
-						titleBox += '<p>' + title + '</p></div>';
-					} else if ( showInfo == 'below' ) {
-						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:block; text-align:center;"">';
-						titleBox += '<p>' + title + '</p></div>';
-						divHeight  = width + 40;
-					}
-					column.innerHTML += '<div style=""width: ' + width + 'px; height: ' + divHeight + 'px; margin-top: ' + spacing + 'px; margin-left:' + spacing + 'px; overflow: hidden;""><img src=""' + img + '"" style=""height:' + width + 'px;"" title=""' + title + '"" alt=""' + alt + '""/>' + titleBox + '</div>';
+					let titleBox = createTitleBox( showInfo, title );
+					let divHeight = ( showInfo == 'below' ) ? width + 40 : width;
+					column.innerHTML += '<div style=""width: ' + width + 'px; height: ' + divHeight + 'px; margin-top: ' + spacing + 'px; margin-left:' + spacing + 'px; overflow: hidden;""><img src=""' + img + '"" title=""' + title + '"" alt=""' + alt + '""/>' + titleBox + '</div>';
 					let imgHeight = column.lastChild.firstChild.naturalHeight;
 					let imgWidth  = column.lastChild.firstChild.naturalWidth;
 					let offset = 0;
-// TODO: choose square cropped images
+// TODO: choose the best size image (square) cropped images
 					if ( imgHeight < imgWidth ){
-						column.lastChild.firstChild.height = width;
-						column.lastChild.firstChild.width  = imgWidth * width / imgHeight;
+						let displayWidth = imgWidth * width / imgHeight;
+						offset = (width - displayWidth) / 2;
+						column.lastChild.firstChild.style.height   = width + 'px';
+						column.lastChild.firstChild.style.maxWidth = displayWidth + 'px';
+						column.lastChild.firstChild.style.width    = displayWidth + 'px';
 						column.lastChild.firstChild.style.position = 'relative';
-						offset = (width - column.lastChild.lastChild.width) / 2;
-						column.lastChild.firstChild.style.left = offset + 'px';
+						column.lastChild.firstChild.style.left     = offset + 'px';
 					} else if ( imgHeight > imgWidth ) {
-						column.lastChild.firstChild.style.width = width + 'px';
-						column.lastChild.firstChild.style.position = 'relative';
-						offset = (width - column.lastChild.lastChild.height) / 2;
-						column.lastChild.firstChild.style.top = offset + 'px';
+						let displayHeight = imgHeight * width / imgWidth;
+						offset = (width - displayHeight) / 2;
+						column.lastChild.firstChild.style.maxHeight = displayHeight + 'px';
+						column.lastChild.firstChild.style.height    = displayHeight + 'px';
+						column.lastChild.firstChild.style.width     = width + 'px';
+						column.lastChild.firstChild.style.position  = 'relative';
+						column.lastChild.firstChild.style.top       = offset + 'px';
 					} else {
 						column.lastChild.firstChild.style.width = width + 'px';
 					}
+				}
+
+				function createTitleBox ( showInfo, title ) {
+					let titleBox   = '';
+					if ( showInfo == 'mouseOver' ) {
+						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:none; text-align:center; top:-45px;"">';
+						titleBox += '<p>' + title + '</p></div>';
+					}else if ( showInfo == 'below' ) {
+						titleBox  = '<div style=""min-height:35px; padding-left:10px; position:relative; background-color:white; z-index:9990; display:block; text-align:center;"">';
+						titleBox += '<p>' + title + '</p></div>';
+					}
+					return titleBox;
 				}
 
 				function findShortestColumn(gallery) {
@@ -435,6 +437,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 							imgHeight = Math.min( image.naturalHeight, window.innerHeight );
 
 // TODO: choose the best size image to show in larger image
+// TODO: Allow the user to choose what size to show the image here
 							// Create large image
 							let largeImage = document.createElement('img');
 							largeImage.src = this.src;
@@ -459,8 +462,14 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 							titleBox.style.zIndex          = 9999;
 							titleBox.style.display         = 'block';
 							titleBox.style.textAlign       = 'center';
+// TODO: don't show the title or alt text if it is blank
 							titleBox.innerHTML  = '<p>' + this.title + '</p>';
 							titleBox.innerHTML += '<p>' + this.alt + '</p>';
+// TODO: Option to add EXIF data
+// TODO: Option to link to a shop to purchase the picture
+// TODO: Option to play a video if this is a video
+// TODO: Option to show likes and awards
+// TODO: Option to allow comments
 
 							// Add title to overlay
 							overlay.appendChild(titleBox);
