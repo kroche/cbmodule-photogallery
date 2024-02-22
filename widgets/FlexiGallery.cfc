@@ -24,35 +24,45 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 // TODO: create the folder list by querying a list for the chosen site
 // TODO: support a selecton of images by date, tags, category
 
-
 	/**
 	* Render a gallery
-	* @folder.hint     The folder (relative to the ContentBox content root) from which to list the gallery of photos.
-	* @filter.hint     A list of file extension filters to apply (*.jpg), use a | to separate multiple filters.
-	* @sort.hint       The sort field (Name, Size, DateLastModified)
-	* @sort.options        Name,Size,DateLastModified
-	* @order.hint      The sort order of the photos. (ASC/DESC) 
-	* @order.options       ASC,DESC
-	* @format.hint     The format to display the gallery. Choose from justified, square, cascade or single
-	* @format.options      justified,square,cascade,single
-	* @showInfo.hint   Defines where to show the image title. Choose from mouseOver, below or none.
-	* @showInfo.options    mouseOver,below,none
-	* @minHeight.hint  The Minimum Height of the gallery images in pixels (250) applies to justified format only
-	* @maxHeight.hint  The Maximum Height of the gallery images in pixels (350) applies to justified format only
-	* @minWidth.hint   The Minimum Width of the gallery images in pixels (300) applies to square, cascade or single formats only
-	* @spacing.hint    The gap in pixels bewteen images (5) applies to all formats
+	* @folder.hint         The folder (relative to the ContentBox content root) from which to list the gallery of photos.
+	* @filter.hint         A list of file extension filters to apply (*.jpg), use a | to separate multiple filters.
+	* @sort.hint           The sort field (Name, Size, DateLastModified).
+	* @sort.options            Name,Size,DateLastModified
+	* @order.hint          The sort order of the photos. (ASC/DESC).
+	* @order.options           ASC,DESC
+	* @format.hint         The format to display the gallery. Choose from justified, square, cascade or single
+	* @format.options          justified,square,cascade,single
+	* @showInfo.hint       Defines where to show the image title. Choose from mouseOver, below or none.
+	* @showInfo.options        mouseOver,below,none
+	* @minHeight.hint      The Minimum Height of the gallery images in pixels (250) applies to justified format only.
+	* @maxHeight.hint      The Maximum Height of the gallery images in pixels (350) applies to justified format only.
+	* @minWidth.hint       The Minimum Width of the gallery images in pixels (300) applies to square, cascade or single column formats only.
+	* @spacing.hint        The gap in pixels bewteen images (5) applies to all formats.
+	* @showOnClick.hint    Show a large popup version or link to the image page when gallery image is clicked. Choose from popup,link or nothing.
+	* @showOnClick.options     popup,link,nothing
+	* @popupMaxHeight.hint The maximum height of the large popup in pixels (800).
+	* @popupMaxWidth.hint  The maximum width of the large popup in pixels (800).
+	* @showDescOnView.hint Show the text description on the large popup.
+	* @showExifData        Show the EXIF data from the image on the large popup.
 	*/
 	any function renderIt(
 			required string  folder,
-					 string  filter    = "*",
-			required string  sort      = "Name",
-			required string  order     = "ASC",
-			required string  format    = "justified",
-			required string  showInfo  = "mouseOver",
-			required numeric minHeight = 250,
-			required numeric maxHeight = 350,
-			required numeric minWidth  = 300,
-			required numeric spacing   = 5
+					 string  filter         = "*",
+			required string  sort           = "Name",
+			required string  order          = "ASC",
+			required string  format         = "justified",
+			required string  showInfo       = "mouseOver",
+			required numeric minHeight      = 250,
+			required numeric maxHeight      = 350,
+			required numeric minWidth       = 300,
+			required numeric spacing        = 5,
+					 string  showOnClick    = "popup",
+					 numeric popupMaxHeight = 800,
+					 numeric popupMaxWidth  = 800,
+					 boolean showDescOnView = true,
+					 boolean showExifData   = false
 		){
 		var event = getRequestContext();
 		rc = event.getCollection();
@@ -107,12 +117,10 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		query.setAttributes(directoryListing = gallery);
 
 		var qryGalleryFolders = query.execute(sql="select * from directoryListing where type = 'Dir' and name <> '_photogallery'", dbtype="query");
-		var qryGalleryPhotos = query.execute(sql="select * from directoryListing where type = 'File'", dbtype="query");
-
-		var galleryFolders = qryGalleryFolders.getResult();
-		var galleryPhotos = qryGalleryPhotos.getResult();
-
-		var settings = deserializeJSON(settingService.getSetting( "photo_gallery" ));
+		var qryGalleryPhotos  = query.execute(sql="select * from directoryListing where type = 'File'", dbtype="query");
+		var galleryFolders    = qryGalleryFolders.getResult();
+		var galleryPhotos     = qryGalleryPhotos.getResult();
+		var settings          = deserializeJSON(settingService.getSetting( "photo_gallery" ));
 
 		// loop over the images
 		var imageString = "images = [";
@@ -134,14 +142,19 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 			// Javascript for the gallery
 			writeOutput("
 				<script>
-				function showGallery() {
+				async function showGallery() {
 
-					const minHeight = #arguments.minHeight#;
-					const maxHeight = #arguments.maxHeight#;
-					const minWidth  = #arguments.minWidth#;
-					const spacing   = #arguments.spacing#;
-					const format    = '#arguments.format#';
-					const showInfo  = '#arguments.showInfo#';
+					const minHeight      =  #arguments.minHeight#;
+					const maxHeight      =  #arguments.maxHeight#;
+					const minWidth       =  #arguments.minWidth#;
+					const spacing        =  #arguments.spacing#;
+					const format         = '#arguments.format#';
+					const showInfo       = '#arguments.showInfo#';
+					const showOnClick    = '#arguments.showOnClick#';
+					const showDescOnView =  #arguments.showDescOnView#;
+					const showExifData   =  #arguments.showExifData#;
+					const popupMaxHeight =  #arguments.popupMaxHeight#;
+					const popupMaxWidth  =  #arguments.popupMaxWidth#;
 
 					// where will we display the images
 					const gallery = document.querySelector('##gallery');
@@ -154,22 +167,18 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					// call the chosen formatter
 					switch(format) {
 						case 'justified':
-							justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo );
-							break;
-						case 'cascade':
-							cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo );
-							break;
-						case 'single':
-							cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo );
+							justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick );
 							break;
 						default:
-							cascadeGallery( gallery, images, 'square', minHeight, maxHeight, minWidth, spacing, showInfo );
+							cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick );
 					}
 					// add mouseover and click events
-					addMouseEvents( showInfo );
+					addMouseEvents( showInfo, showOnClick, popupMaxHeight, popupMaxWidth, showDescOnView, showExifData );
 				}
 
-				function justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo ) {
+
+
+				function justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick ) {
 					// Set variables to track current row width at max and min height
 					let rowMaxWidth = spacing;
 					let rowMinWidth = spacing;
@@ -243,11 +252,11 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						}
 					});
 					// Justify last row
-					justifyRow(currRow, galleryWidth, rowMaxWidth, maxHeight, spacing, showInfo);
+					justifyRow( currRow, galleryWidth, rowMaxWidth, maxHeight, spacing, showInfo );
 				}
 
-				function justifyRow(row, galleryWidth, rowMaxWidth, maxHeight, spacing, showInfo) {
-					let totalMargin      = (row.length + 1) * spacing;
+				function justifyRow( row, galleryWidth, rowMaxWidth, maxHeight, spacing, showInfo ) {
+					let totalMargin	     = (row.length + 1) * spacing;
 					let totalImageWidths = galleryWidth - totalMargin;
 					let resizeHeight     = Math.trunc(maxHeight * galleryWidth / rowMaxWidth);
 					let img              = '';
@@ -267,7 +276,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					});
 				}
 
-				function cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo ) {
+				function cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick ) {
 					// Initialise variables
 					let galleryHTML   = '';
 					let columnElement = 0;
@@ -280,7 +289,6 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					if ( format == 'single' ) {
 						gallery.style.justifyContent = 'center';
 						margin = ((galleryWidth - resizeWidth) / 2) - spacing;
-
 					} else {
 						// Gallery width
 						galleryWidth = gallery.offsetWidth - spacing;
@@ -327,7 +335,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					});
 				}
 
-				function createImage( imageURL, container, width, spacing, showInfo, title, alt ) {
+				function createImage( imageURL, container, width, spacing, showInfo, title, alt, showOnClick ) {
 					let titleBox = createTitleBox( showInfo, title );
 // TODO: choose the best size image
 					if ( width === null ) {
@@ -339,36 +347,40 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					}
 				}
 
-				function createSquareImage( img, column, width, spacing, showInfo, title, alt ) {
-					let titleBox = createTitleBox( showInfo, title );
-					let divHeight = ( showInfo == 'below' ) ? width + 40 : width;
+				function createSquareImage( img, column, width, spacing, showInfo, title, alt, showOnClick ) {
+					let titleBox      = createTitleBox( showInfo, title );
+					let divHeight     = ( showInfo == 'below' ) ? width + 40 : width;
 					column.innerHTML += '<div style=""width: ' + width + 'px; height: ' + divHeight + 'px; margin-top: ' + spacing + 'px; margin-left:' + spacing + 'px; overflow: hidden;""><img src=""' + img + '"" title=""' + title + '"" alt=""' + alt + '""/>' + titleBox + '</div>';
-					let imgHeight = column.lastChild.firstChild.naturalHeight;
-					let imgWidth  = column.lastChild.firstChild.naturalWidth;
-					let offset = 0;
+					let imgHeight     = column.lastChild.firstChild.naturalHeight;
+					let imgWidth      = column.lastChild.firstChild.naturalWidth;
+					let imageStyle    = column.lastChild.firstChild.style;
+					let imageOffset   = 0;
+
 // TODO: choose the best size image
 // TODO: cut the length of the title to suit the width of the image
 					if ( imgHeight < imgWidth ){
+						// Landscape
 						let displayWidth = imgWidth * width / imgHeight;
-						offset = ( width - displayWidth ) / 2;
-						column.lastChild.firstChild.style.height   = width + 'px';
-						column.lastChild.firstChild.style.maxWidth = displayWidth + 'px';
-						column.lastChild.firstChild.style.width    = displayWidth + 'px';
-						column.lastChild.firstChild.style.position = 'relative';
-						column.lastChild.firstChild.style.left     = offset + 'px';
+						imageOffset = ( width - displayWidth ) / 2;
+						imageStyle.height   = width + 'px';
+						imageStyle.maxWidth = displayWidth + 'px';
+						imageStyle.width    = displayWidth + 'px';
+						imageStyle.position = 'relative';
+						imageStyle.left     = imageOffset + 'px';
 					} else if ( imgHeight > imgWidth ) {
+						// Portrait
 						let displayHeight = imgHeight * width / imgWidth;
-						offset = ( width - displayHeight ) / 2;
-						column.lastChild.firstChild.style.maxHeight = displayHeight + 'px';
-						column.lastChild.firstChild.style.height    = displayHeight + 'px';
-						column.lastChild.firstChild.style.width     = width + 'px';
-						column.lastChild.firstChild.style.position  = 'relative';
-						column.lastChild.firstChild.style.top       = offset + 'px';
-						column.lastChild.lastChild.style.top        = ( showInfo == 'below' ) ? ( 2 * offset) + 'px' : (( 2 * offset) - 45 ) + 'px';
-						
+						imageOffset = ( width - displayHeight ) / 2;
+						imageStyle.maxHeight = displayHeight + 'px';
+						imageStyle.height    = displayHeight + 'px';
+						imageStyle.width     = width + 'px';
+						imageStyle.position  = 'relative';
+						imageStyle.top       = imageOffset + 'px';
+						column.lastChild.lastChild.style.top        = ( showInfo == 'below' ) ? ( 2 * imageOffset) + 'px' : (( 2 * imageOffset) - 40 ) + 'px';
 					} else {
-						column.lastChild.firstChild.style.width  = width + 'px';
-						column.lastChild.firstChild.style.height = width + 'px';
+						// Square
+						imageStyle.width  = width + 'px';
+						imageStyle.height = width + 'px';
 					}
 				}
 
@@ -398,7 +410,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					return shortestColumn;
 				}
 
-				function addMouseEvents( showInfo ){
+				function addMouseEvents( showInfo, showOnClick, popupMaxHeight, popupMaxWidth, showDescOnView, showExifData ){
 					// Get all the image elements
 					let images = document.querySelectorAll('##gallery img');
 
@@ -441,16 +453,16 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 
 							document.body.appendChild(overlay);
 							// Check the size of the image and window and chose a size that fits
-							imgWidth  = Math.min( image.naturalWidth,  window.innerWidth  );
-							imgHeight = Math.min( image.naturalHeight, window.innerHeight );
+							imgHeight = Math.min( image.naturalHeight, window.innerHeight, popupMaxHeight );
+							imgWidth  = Math.min( image.naturalWidth,  window.innerWidth,  popupMaxWidth  );
 
-// TODO: choose the best size image to show in larger image
-// TODO: Allow the user to choose what size to show the image here
+// TODO: choose the best size image to show in larger image (won't be able to use image.naturalHeight to do that!)
 							// Create large image
 							let largeImage = document.createElement('img');
 							largeImage.src = this.src;
-							largeImage.style.maxWidth  = imgWidth + 'px';
+							
 							largeImage.style.maxHeight = imgHeight + 'px';
+							largeImage.style.maxWidth  = imgWidth + 'px';
 							largeImage.style.position  = 'absolute';
 							largeImage.style.top       = (nextPosition) + 'px';
 							largeImage.id = 'overlayImage';
