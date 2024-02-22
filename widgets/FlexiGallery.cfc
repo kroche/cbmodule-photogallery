@@ -189,6 +189,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					let galleryWidth = gallery.offsetWidth - spacing - 13; // 13 is the scroll bar allowance
 
 					// Initialise variables
+					let img = '';
 					let imgWidth = 0;
 					let imgHeight = 0;
 					let imgWidthResizeMax = 0;
@@ -197,7 +198,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					// Loop over the array of image URLs and create the HTML
 //TODO: Handle image title and description
 					images.forEach(imageURL => {
-						createImage( imageURL, gallery, null, spacing, showInfo, 'A sample title', 'A sample description' );
+						createImage( imageURL, gallery, null, spacing, showInfo, 'A sample title', 'A sample description', showOnClick );
 					})
 
 					// Greate an array of the div objects containg each img
@@ -206,7 +207,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					// Loop over the array of divs
 					imgDivs.forEach(container => {
 						// Get image width and height including margins
-						img = container.firstChild;
+						img = container.querySelector('img');
 						imgWidth  = img.naturalWidth;
 						imgHeight = img.naturalHeight;
 
@@ -270,7 +271,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						imgDiv.style.float = 'left';
 						imgDiv.style.height = divHeight + 'px';
 						imgDiv.height = divHeight + 'px';
-						img = imgDiv.firstElementChild;
+						img = imgDiv.querySelector('img');
 						img.style.height = height + 'px';
 						img.height = height + 'px';
 					});
@@ -322,38 +323,42 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						// find the shortest column
 						columnElement = findShortestColumn( gallery );
 						// add the image to the shortest column
-// TODO: handle image title and description
+// TODO: Handle image title and description
 						if ( format === 'square' ) {
-							createSquareImage( imageURL, columnElement, resizeWidth, spacing, showInfo, 'A sample title', 'A sample description' );
+							createSquareImage( imageURL, columnElement, resizeWidth, spacing, showInfo, 'A sample title', 'A sample description', showOnClick );
 						} else {
-							createImage( imageURL, columnElement, resizeWidth, spacing, showInfo, 'A sample title', 'A sample description' );
+							createImage( imageURL, columnElement, resizeWidth, spacing, showInfo, 'A sample title', 'A sample description', showOnClick );
 						}
 						// Make sure the title box does not push the element below down the column
 						if ( showInfo != 'below' ){
-							columnElement.lastChild.style.maxHeight = columnElement.lastChild.firstChild.offsetHeight + 'px';
+							columnElement.lastChild.style.maxHeight = columnElement.lastChild.querySelector('img').offsetHeight + 'px';
 						}
 					});
 				}
 
 				function createImage( imageURL, container, width, spacing, showInfo, title, alt, showOnClick ) {
 					let titleBox = createTitleBox( showInfo, title );
+					let linkTag  = showOnClick == 'link' ? createLinkTag( imageURL, showOnClick ) : { open:'', close:'' };
 // TODO: choose the best size image
 					if ( width === null ) {
 						// used for justified images
-						container.innerHTML += ('<div style=""margin-top: ' + spacing + 'px; margin-left: '+ spacing + 'px;""><img src=""' + imageURL + '"" title=""' + title + '"" alt=""' + alt + '""/>' + titleBox + '</div>');
+						container.innerHTML += ('<div style=""margin-top: ' + spacing + 'px; margin-left: '+ spacing + 'px;"">' + linkTag.open + '<img src=""' + imageURL + '"" title=""' + title + '"" alt=""' + alt + '""/>' + linkTag.close + titleBox + '</div>');
 					} else {
 						// used for cascading or single column images 
-						container.innerHTML += ('<div style=""margin-top: ' + spacing + 'px; margin-left: '+ spacing + 'px;""><div width=""' + width + 'px""><img src=""' + imageURL + '"" title=""' + title + '"" alt=""' + alt + '"" width=""' + width + 'px""/>' + titleBox + '</div></div>');
+						container.innerHTML += ('<div style=""margin-top: ' + spacing + 'px; margin-left: '+ spacing + 'px;""><div width=""' + width + 'px"">' + linkTag.open + '<img src=""' + imageURL + '"" title=""' + title + '"" alt=""' + alt + '"" width=""' + width + 'px""/>' + linkTag.close + titleBox + '</div></div>');
 					}
 				}
 
-				function createSquareImage( img, column, width, spacing, showInfo, title, alt, showOnClick ) {
+				function createSquareImage( imageURL, column, width, spacing, showInfo, title, alt, showOnClick ) {
 					let titleBox      = createTitleBox( showInfo, title );
+					let linkTag       = showOnClick == 'link' ? createLinkTag( imageURL, showOnClick ) : { open:'', close:'' };
 					let divHeight     = ( showInfo == 'below' ) ? width + 40 : width;
-					column.innerHTML += '<div style=""width: ' + width + 'px; height: ' + divHeight + 'px; margin-top: ' + spacing + 'px; margin-left:' + spacing + 'px; overflow: hidden;""><img src=""' + img + '"" title=""' + title + '"" alt=""' + alt + '""/>' + titleBox + '</div>';
-					let imgHeight     = column.lastChild.firstChild.naturalHeight;
-					let imgWidth      = column.lastChild.firstChild.naturalWidth;
-					let imageStyle    = column.lastChild.firstChild.style;
+					
+					column.innerHTML += '<div style=""width: ' + width + 'px; height: ' + divHeight + 'px; margin-top: ' + spacing + 'px; margin-left:' + spacing + 'px; overflow: hidden;"">' + linkTag.open + '<img src=""' + imageURL + '"" title=""' + title + '"" alt=""' + alt + '""/>' + linkTag.close + titleBox + '</div>';
+					let img           = column.lastChild.querySelector('img');
+					let imgHeight     = img.naturalHeight;
+					let imgWidth      = img.naturalWidth;
+					let imageStyle    = img.style;
 					let imageOffset   = 0;
 
 // TODO: choose the best size image
@@ -398,9 +403,15 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					return titleBox;
 				}
 
+				function createLinkTag( url, showOnClick ){
+					let linkTag = {};
+					linkTag.open  = '<a href=""' + url + '"">';
+					linkTag.close = '</a>';
+					return linkTag;
+				}
+
 				function findShortestColumn(gallery) {
 					let columns = gallery.childNodes;
-				//alert('columns: ' + columns.length);
 					let shortestColumn = columns[0];
 					columns.forEach( col => {
 						if( col.offsetHeight < shortestColumn.offsetHeight ) {
@@ -417,88 +428,105 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					// Loop through each image  
 					images.forEach(function(image) {
 
-						if ( showInfo == 'mouseOver' ){
+						if ( showInfo == 'mouseOver' && this.title != ''){
 						// Set the mouseover on each image to show the title
 							image.addEventListener('mouseover', function(e){
-								let titleBox = this.nextSibling;
+								let titleBox = '';
+								if (this.parentElement.tagName == 'A'){
+									titleBox = this.parentElement.nextSibling;
+								} else {
+									titleBox = this.nextSibling;
+								};
 								titleBox.style.display = 'block';
 							});
 							image.addEventListener('mouseout', function(e){
-								let titleBox = this.nextSibling;
+								let titleBox = '';
+								if (this.parentElement.tagName == 'A'){
+									titleBox = this.parentElement.nextSibling;
+								} else {
+									titleBox = this.nextSibling;
+								};
 								titleBox.style.display = 'none';
 							});
 						}
 
-						// Create an overlay and large image with title and description to show on click
-						image.addEventListener('click', function(e) {
-							// Create overlay div
-							let overlay = document.createElement('div');
-							let nextPosition = 40;
-							overlay.id = 'overlay';
+						if ( showOnClick == 'popup' ){
+							// Create an overlay and large image with title and description to show on click
+							image.addEventListener('click', function(e) {
+								// Create overlay div
+								let overlay = document.createElement('div');
+								let nextPosition = 40;
+								overlay.id = 'overlay';
+	
+								// Set as fixed position 
+								overlay.style.position = 'fixed';
+								overlay.style.display = 'none';
+								overlay.style.left   = 0;
+								overlay.style.top    = 0;
+								overlay.style.right  = 0;
+								overlay.style.bottom = 0;
+								overlay.style.background = 'rgba(0,0,0,0.5)';
+								overlay.style.display = 'flex';
+								overlay.style.justifyContent = 'center';
+								
+								// ensure we are on top when on the editor preview page
+								overlay.style.zIndex = 9997;
 
-							// Set as fixed position 
-							overlay.style.position = 'fixed';
-							overlay.style.display = 'none';
-							overlay.style.left   = 0;
-							overlay.style.top    = 0;
-							overlay.style.right  = 0;
-							overlay.style.bottom = 0;
-							overlay.style.background = 'rgba(0,0,0,0.5)';
-							overlay.style.display = 'flex';
-							//overlay.style.alignItems = 'center';
-							overlay.style.justifyContent = 'center';
-							
-							// ensure we are on top when on the editor preview page
-							overlay.style.zIndex = 9997;
-
-							document.body.appendChild(overlay);
-							// Check the size of the image and window and chose a size that fits
-							imgHeight = Math.min( image.naturalHeight, window.innerHeight, popupMaxHeight );
-							imgWidth  = Math.min( image.naturalWidth,  window.innerWidth,  popupMaxWidth  );
+								document.body.appendChild(overlay);
+								// Check the size of the image and window and chose a size that fits
+								imgHeight = Math.min( image.naturalHeight, window.innerHeight, popupMaxHeight );
+								imgWidth  = Math.min( image.naturalWidth,  window.innerWidth,  popupMaxWidth  );
 
 // TODO: choose the best size image to show in larger image (won't be able to use image.naturalHeight to do that!)
-							// Create large image
-							let largeImage = document.createElement('img');
-							largeImage.src = this.src;
-							
-							largeImage.style.maxHeight = imgHeight + 'px';
-							largeImage.style.maxWidth  = imgWidth + 'px';
-							largeImage.style.position  = 'absolute';
-							largeImage.style.top       = (nextPosition) + 'px';
-							largeImage.id = 'overlayImage';
-							largeImage.style.zIndex    = 9998;
-							// Add large image to overlay
-							overlay.appendChild(largeImage);
+								// Create large image
+								let largeImage = document.createElement('img');
+								largeImage.src = this.src;
+								
+								largeImage.style.maxHeight = imgHeight + 'px';
+								largeImage.style.maxWidth  = imgWidth + 'px';
+								largeImage.style.position  = 'absolute';
+								largeImage.style.top       = (nextPosition) + 'px';
+								largeImage.id = 'overlayImage';
+								largeImage.style.zIndex    = 9998;
+								// Add large image to overlay
+								overlay.appendChild(largeImage);
 
-							// Show the title and description below the image
-							let titleBox   = document.createElement('div');
-							titleBox.style.width           = imgWidth + 'px';
-							titleBox.style.minHeight       = '40px';
-							titleBox.style.paddingLeft     = '10px';
-							titleBox.style.position        = 'absolute';
-							nextPosition                   = overlay.lastChild.getBoundingClientRect().bottom;
-							titleBox.style.top             = (nextPosition) + 'px';
-							titleBox.style.backgroundColor = 'white';
-							titleBox.style.zIndex          = 9999;
-							titleBox.style.display         = 'block';
-							titleBox.style.textAlign       = 'center';
+								// Show the title and description below the image
+								let titleBox   = document.createElement('div');
+								titleBox.style.width           = imgWidth + 'px';
+								titleBox.style.minHeight       = '40px';
+								titleBox.style.paddingLeft     = '10px';
+								titleBox.style.position        = 'absolute';
+								nextPosition                   = overlay.lastChild.getBoundingClientRect().bottom;
+								titleBox.style.top             = (nextPosition) + 'px';
+								titleBox.style.backgroundColor = 'white';
+								titleBox.style.zIndex          = 9999;
+								titleBox.style.display         = 'block';
+								titleBox.style.textAlign       = 'center';
 // TODO: don't show the title or alt text if it is blank
-							titleBox.innerHTML  = '<p>' + this.title + '</p>';
-							titleBox.innerHTML += '<p>' + this.alt + '</p>';
-// TODO: Option to add EXIF data
+								if ( this.title != '' ){
+									titleBox.innerHTML  = '<p>' + this.title + '</p>';
+								}
+								if ( showDescOnView && this.alt != ''){
+									titleBox.innerHTML += '<p>' + this.alt + '</p>';
+								}
+								//if ( showExifData && this.dataExif != ''){
+								//	titleBox.innerHTML += '<p>' + this.dataExif + '</p>';
+								//}
 // TODO: Option to link to a shop to purchase the picture
 // TODO: Option to play a video if this is a video
 // TODO: Option to show likes and awards
 // TODO: Option to allow comments
 
-							// Add title to overlay
-							overlay.appendChild(titleBox);
+								// Add title to overlay
+								overlay.appendChild(titleBox);
 
-							// Close the image on click
-							overlay.onclick = function() {
-								document.body.removeChild(overlay);
-							}
-						});
+								// Close the image on click
+								overlay.onclick = function() {
+									document.body.removeChild(overlay);
+								}
+							});
+						}
 					});
 				}
 
