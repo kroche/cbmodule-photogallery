@@ -116,21 +116,36 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		var query = new Query();
 		query.setAttributes(directoryListing = gallery);
 
-		var qryGalleryFolders = query.execute(sql="select * from directoryListing where type = 'Dir' and name <> '_photogallery'", dbtype="query");
-		var qryGalleryPhotos  = query.execute(sql="select * from directoryListing where type = 'File'", dbtype="query");
-		var galleryFolders    = qryGalleryFolders.getResult();
-		var galleryPhotos     = qryGalleryPhotos.getResult();
-		var settings          = deserializeJSON(settingService.getSetting( "photo_gallery" ));
+		var qryGalleryFolders  = query.execute(sql="select * from directoryListing where type = 'Dir' and name <> '_photogallery'", dbtype="query");
+		var qryGalleryPhotos   = query.execute(sql="select * from directoryListing where type = 'File'", dbtype="query");
+		var galleryFolders     = qryGalleryFolders.getResult();
+		var galleryPhotos      = qryGalleryPhotos.getResult();
+		var settings           = deserializeJSON(settingService.getSetting( "photo_gallery" ));
+		var galleryRow         = {};
+		var galleryPhotosArray = [];
+		var galleryPhotosJSON  = "";
 
-		// loop over the images
-		var imageString = "images = [";
+		// Temporary code to add extra columns
 		for (var x=startRow; x lte galleryPhotos.recordcount; x++) {
-			imageString &= "'#galleryPath#/#galleryPhotos.name[x]#'";
-			if ( x lt galleryPhotos.recordcount ) {
-				imageString &= ',';
+			if ( x le galleryPhotos.recordcount ) {
+				galleryRow["name"]        = galleryPhotos.name[x];
+				galleryRow["url"]         = "#galleryPath#/#galleryPhotos.name[x]#";
+				galleryRow["title"]       = "A sample title";
+				galleryRow["description"] = "A sample description";
+				galleryRow["tags"]        = "portrait,model,x-pro2";
+				galleryRow["reactions"]   = {"like"=6,"love"=12,"star"=3,"award"=5};
+				galleryRow["author"]      = "Anonymous";
+				arrayAppend( galleryPhotosArray, galleryRow );
+				galleryRow = {};
 			}
 		}
-		imageString &= ']';
+
+		//writeDump(var=galleryPhotosArray, label="galleryPhotosArray", abort="1");
+		galleryPhotosJSON = serializeJSON( galleryPhotosArray );
+		//writeDump(var=galleryPhotosJSON, label="galleryPhotosJSON", abort="1");
+		
+		//Fix for including the JSON in the writeOutput() below
+		//galleryPhotosJSON = replace(galleryPhotosJSON, chr(34), chr(39) );
 
 		// generate photo gallery
 		var rString = "";
@@ -160,9 +175,8 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					const gallery = document.querySelector('##gallery');
 
 // TODO: get the list of images, titles and descriptions with an ajax call
-
 					// Get an array of images from server
-					#imageString#
+					const images = JSON.parse('#galleryPhotosJSON#');
 
 					// call the chosen formatter
 					switch(format) {
@@ -175,8 +189,6 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					// add mouseover and click events
 					addMouseEvents( showInfo, showOnClick, popupMaxHeight, popupMaxWidth, showDescOnView, showExifData );
 				}
-
-
 
 				function justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick ) {
 					// Set variables to track current row width at max and min height
@@ -197,8 +209,8 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 
 					// Loop over the array of image URLs and create the HTML
 //TODO: Handle image title and description
-					images.forEach(imageURL => {
-						createImage( imageURL, gallery, null, spacing, showInfo, 'A sample title', 'A sample description', showOnClick );
+					images.forEach(image => {
+						createImage( image.url, gallery, null, spacing, showInfo, image.title, image.description, showOnClick );
 					})
 
 					// Greate an array of the div objects containg each img
@@ -318,16 +330,16 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					resizeWidth -= spacing;
 
 					let i = 0;
-					images.forEach(imageURL => {
+					images.forEach(image => {
 // TODO: choose the best size image based on maxHeight and minWidth
 						// find the shortest column
 						columnElement = findShortestColumn( gallery );
 						// add the image to the shortest column
 // TODO: Handle image title and description
 						if ( format === 'square' ) {
-							createSquareImage( imageURL, columnElement, resizeWidth, spacing, showInfo, 'A sample title', 'A sample description', showOnClick );
+							createSquareImage( image.url, columnElement, resizeWidth, spacing, showInfo, image.title, image.description, showOnClick );
 						} else {
-							createImage( imageURL, columnElement, resizeWidth, spacing, showInfo, 'A sample title', 'A sample description', showOnClick );
+							createImage( image.url, columnElement, resizeWidth, spacing, showInfo, image.title, image.description, showOnClick );
 						}
 						// Make sure the title box does not push the element below down the column
 						if ( showInfo != 'below' ){
