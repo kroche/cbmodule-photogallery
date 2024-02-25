@@ -130,7 +130,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 			if ( x le galleryPhotos.recordcount ) {
 				galleryRow["name"]        = galleryPhotos.name[x];
 				galleryRow["url"]         = "#galleryPath#/#galleryPhotos.name[x]#";
-				galleryRow["title"]       = "A sample title";
+				galleryRow["title"]       = galleryPhotos.name[x];
 				galleryRow["description"] = "A sample description";
 				galleryRow["tags"]        = "portrait,model,x-pro2";
 				galleryRow["reactions"]   = {"like"=6,"love"=12,"star"=3,"award"=5};
@@ -151,14 +151,19 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 		var rString = "";
 		saveContent variable="rString" {
 
+			// Javascript Libraries
+			writeOutput('<script src="/smartcrop/smartcrop.js"></script>');
+
+			// CSS Libraries
+			
+
 			// HTML for the gallery
 			writeOutput('<div id="gallery" style="flex"></div>');
 
 			// Javascript for the gallery
 			writeOutput("
-				<script>
+			<script>
 				async function showGallery() {
-
 					const minHeight      =  #arguments.minHeight#;
 					const maxHeight      =  #arguments.maxHeight#;
 					const minWidth       =  #arguments.minWidth#;
@@ -170,6 +175,11 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					const showExifData   =  #arguments.showExifData#;
 					const popupMaxHeight =  #arguments.popupMaxHeight#;
 					const popupMaxWidth  =  #arguments.popupMaxWidth#;
+					// Set the crop size on square images to minWidth 
+					const squareCrop     =  {
+						width:  minWidth,
+						height: minWidth
+					};
 
 					// where will we display the images
 					const gallery = document.querySelector('##gallery');
@@ -177,14 +187,25 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 // TODO: get the list of images, titles and descriptions with an ajax call
 					// Get an array of images from server
 					const images = JSON.parse('#galleryPhotosJSON#');
+					for ( var image of images ) {
+						// Preload images so that the size information is available
+						image.photo = await loadImage( image.url );
+						// If we are using square images crop any that need to be cropped
+						if ( format == 'square' ) {
+							if ( image.photo.naturalHeight != image.photo.naturalWidth ) {
+								image.crops = await smartcrop.crop(image.photo, squareCrop);
+								console.log( 'image.crops', image.crops );
+							}
+						}
+					}
 
 					// call the chosen formatter
 					switch(format) {
 						case 'justified':
-							justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick );
+							await justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick );
 							break;
 						default:
-							cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick );
+							await cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick );
 					}
 					// add mouseover and click events
 					addMouseEvents( showInfo, showOnClick, popupMaxHeight, popupMaxWidth, showDescOnView, showExifData );
@@ -337,7 +358,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						// add the image to the shortest column
 // TODO: Handle image title and description
 						if ( format === 'square' ) {
-							createSquareImage( image.url, columnElement, resizeWidth, spacing, showInfo, image.title, image.description, showOnClick );
+							createSquareImage( image, columnElement, resizeWidth, spacing, showInfo, image.title, image.description, showOnClick );
 						} else {
 							createImage( image.url, columnElement, resizeWidth, spacing, showInfo, image.title, image.description, showOnClick );
 						}
@@ -352,6 +373,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					let titleBox = createTitleBox( showInfo, title );
 					let linkTag  = showOnClick == 'link' ? createLinkTag( imageURL, showOnClick ) : { open:'', close:'' };
 // TODO: choose the best size image
+// TODO: cut the length of the title to suit the width of the image
 					if ( width === null ) {
 						// used for justified images
 						container.innerHTML += ('<div style=""margin-top: ' + spacing + 'px; margin-left: '+ spacing + 'px;"">' + linkTag.open + '<img src=""' + imageURL + '"" title=""' + title + '"" alt=""' + alt + '""/>' + linkTag.close + titleBox + '</div>');
@@ -361,12 +383,22 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					}
 				}
 
-				function createSquareImage( imageURL, column, width, spacing, showInfo, title, alt, showOnClick ) {
+				function loadImage( src ) {
+					// this function uses a promise to preload images
+					return new Promise((resolve, reject) => {
+						const image = new Image();
+						image.onload = () => resolve(image);
+						image.onerror = e => reject(new Error(e));
+						image.src = src;
+					});
+				}
+
+				function createSquareImage( image, column, width, spacing, showInfo, title, alt, showOnClick ) {
 					let titleBox      = createTitleBox( showInfo, title );
-					let linkTag       = showOnClick == 'link' ? createLinkTag( imageURL, showOnClick ) : { open:'', close:'' };
+					let linkTag       = showOnClick == 'link' ? createLinkTag( image.url, showOnClick ) : { open:'', close:'' };
 					let divHeight     = ( showInfo == 'below' ) ? width + 40 : width;
 					
-					column.innerHTML += '<div style=""width: ' + width + 'px; height: ' + divHeight + 'px; margin-top: ' + spacing + 'px; margin-left:' + spacing + 'px; overflow: hidden;"">' + linkTag.open + '<img src=""' + imageURL + '"" title=""' + title + '"" alt=""' + alt + '""/>' + linkTag.close + titleBox + '</div>';
+					column.innerHTML += '<div style=""width: ' + width + 'px; height: ' + divHeight + 'px; margin-top: ' + spacing + 'px; margin-left:' + spacing + 'px; overflow: hidden;"">' + linkTag.open + '<img src=""' + image.url + '"" title=""' + title + '"" alt=""' + alt + '""/>' + linkTag.close + titleBox + '</div>';
 					let img           = column.lastChild.querySelector('img');
 					let imgHeight     = img.naturalHeight;
 					let imgWidth      = img.naturalWidth;
@@ -377,23 +409,33 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 // TODO: cut the length of the title to suit the width of the image
 					if ( imgHeight < imgWidth ){
 						// Landscape
-						let displayWidth = imgWidth * width / imgHeight;
-						imageOffset = ( width - displayWidth ) / 2;
+						let displayWidth    = imgWidth * width / imgHeight;
 						imageStyle.height   = width + 'px';
 						imageStyle.maxWidth = displayWidth + 'px';
 						imageStyle.width    = displayWidth + 'px';
 						imageStyle.position = 'relative';
-						imageStyle.left     = imageOffset + 'px';
+						if ( image.crops != undefined ){
+							const scale     = width / image.crops.topCrop.width;
+							imageStyle.left = -image.crops.topCrop.x * scale + 'px';
+						} else {
+							imageOffset     = ( width - displayWidth ) / 2;
+							imageStyle.left = imageOffset + 'px';
+						}
 					} else if ( imgHeight > imgWidth ) {
 						// Portrait
-						let displayHeight = imgHeight * width / imgWidth;
-						imageOffset = ( width - displayHeight ) / 2;
+						let displayHeight    = imgHeight * width / imgWidth;
 						imageStyle.maxHeight = displayHeight + 'px';
 						imageStyle.height    = displayHeight + 'px';
 						imageStyle.width     = width + 'px';
 						imageStyle.position  = 'relative';
-						imageStyle.top       = imageOffset + 'px';
-						column.lastChild.lastChild.style.top        = ( showInfo == 'below' ) ? ( 2 * imageOffset) + 'px' : (( 2 * imageOffset) - 40 ) + 'px';
+						if ( image.crops != undefined ){
+							const scale      = width / image.crops.topCrop.width;
+							imageOffset      = -image.crops.topCrop.y * scale;
+						} else {
+							imageOffset      = ( width - displayHeight ) / 2;
+						}
+						imageStyle.top   = imageOffset + 'px';
+						column.lastChild.lastChild.style.top = ( showInfo == 'below' ) ? -displayHeight + width + 'px' : -displayHeight + width - 40 + 'px';
 					} else {
 						// Square
 						imageStyle.width  = width + 'px';
@@ -562,7 +604,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 				// Render gallery
 				showGallery();
 				window.onresize = resizeGallery;
-				</script>
+			</script>
 			");
 		}
 		return rString;
