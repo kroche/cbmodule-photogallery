@@ -32,11 +32,12 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 	* @sort.options            Name,Size,DateLastModified
 	* @order.hint          The sort order of the photos. (ASC/DESC).
 	* @order.options           ASC,DESC
-	* @format.hint         The format to display the gallery. Choose from justified, square, cascade or single
-	* @format.options          justified,square,cascade,single
+	* @format.hint         The format to display the gallery. Choose from justified, square, cascade, single or slider
+	* @format.options          justified,square,cascade,single,slider
 	* @showInfo.hint       Defines where to show the image title. Choose from mouseOver, below or none.
 	* @showInfo.options        mouseOver,below,none
 	* @minHeight.hint      The Minimum Height of the gallery images in pixels (250) applies to justified format only.
+	* @minHeight.hideudf       test
 	* @maxHeight.hint      The Maximum Height of the gallery images in pixels (350) applies to justified format only.
 	* @minWidth.hint       The Minimum Width of the gallery images in pixels (300) applies to square, cascade or single column formats only.
 	* @spacing.hint        The gap in pixels bewteen images (5) applies to all formats.
@@ -94,8 +95,8 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 			return "Please specify a format";
 		}
 
-		if( !listFindNoCase( "justified,square,cascade,single", arguments.format ) ){
-			return "Please specify a valid format - justified, square, cascade or single";
+		if( !listFindNoCase( "justified,square,cascade,single,slider", arguments.format ) ){
+			return "Please specify a valid format - justified, square, cascade, single or slider";
 		}
 
 		if( !len( arguments.format ) ){
@@ -155,7 +156,46 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 			writeOutput('<script src="/smartcrop/smartcrop.js"></script>');
 
 			// CSS Libraries
-			
+			writeOutput('
+				<style>
+					.zx_slider{
+						position: relative;
+						width: 100%;
+						margin: auto;
+						overflow: hidden;
+					}
+					.zx_slider img{
+						width: 100%;
+						display: none;
+					}
+					img.zx_displaySlide{
+						display: block;
+						animation-name: fade;
+						animation-duration: 1.5s;
+					}
+					.zx_slider button{
+						position: absolute;
+						top: 50%;
+						transform: translateY(-50%);
+						font-size: 2rem;
+						padding: 10px 15px;
+						background-color: hsla(0, 0%, 0%, 0.5);
+						color white;
+						border: none;
+						cursor: pointer;
+					}
+					.zx_prev{
+						left: 0;
+					}
+					.zx_next{
+						right: 0;
+					}
+					@keyframes fade {
+						from {opacity: .5 }
+						to (opacity: 1)
+					}
+				</style>	
+			');
 
 			// HTML for the gallery
 			writeOutput('<div id="gallery" style="flex"></div>');
@@ -163,6 +203,10 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 			// Javascript for the gallery
 			writeOutput("
 			<script>
+				var slides = null;
+				var slideIndex = 0;
+				var intervalId = null;
+
 				async function showGallery() {
 					const minHeight      =  #arguments.minHeight#;
 					const maxHeight      =  #arguments.maxHeight#;
@@ -204,6 +248,9 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 						case 'justified':
 							await justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick );
 							break;
+						case 'slider':
+							await sliderGallery( gallery, images, minHeight, maxHeight, showInfo, showOnClick );
+							break;
 						default:
 							await cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick );
 					}
@@ -211,7 +258,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					addMouseEvents( showInfo, showOnClick, popupMaxHeight, popupMaxWidth, showDescOnView, showExifData );
 				}
 
-				function justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick ) {
+				async function justifyGallery( gallery, images, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick ) {
 					// Set variables to track current row width at max and min height
 					let rowMaxWidth = spacing;
 					let rowMinWidth = spacing;
@@ -310,7 +357,7 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 					});
 				}
 
-				function cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick ) {
+				async function cascadeGallery( gallery, images, format, minHeight, maxHeight, minWidth, spacing, showInfo, showOnClick ) {
 					// Initialise variables
 					let galleryHTML   = '';
 					let columnElement = 0;
@@ -367,6 +414,51 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 							columnElement.lastChild.style.maxHeight = columnElement.lastChild.querySelector('img').offsetHeight + 'px';
 						}
 					});
+				}
+
+				async function sliderGallery( gallery, images, minHeight, maxHeight, showInfo, showOnClick ){
+					let galleryHTML   = '';
+					galleryHTML += ('<div class=""zx_slider""><div class=""zx_slides"" >');
+					images.forEach(image => {
+						galleryHTML += ('<img class=""zx_slide"" src=""' + image.url + '"" title=""' + image.title + '"" alt=""' + image.description + '""/> ');
+					});
+					galleryHTML += ('</div>');
+					galleryHTML += ('<button class=""zx_prev"" onclick=""prevSlide()"">&##10094</button>');
+					galleryHTML += ('<button class=""zx_next"" onclick=""nextSlide()"">&##10095</button>');
+					galleryHTML += ('</div>');
+					gallery.innerHTML = galleryHTML;
+					slides = gallery.querySelectorAll("".zx_slides img"");
+					console.log(slides.length + ' slides found');
+					if ( slides.length > 0 ){
+						slides[ slideIndex ].classList.add(""zx_displaySlide"");
+						intervalId = setInterval( nextSlide, 5000);
+						console.log('intervalId:' + intervalId);
+					}
+					slideIndex = 0;
+					showSlide(slideIndex);
+				}
+
+				function showSlide( index ){
+					if( index >= slides.length ){
+						slideIndex = 0;
+					} else if( index < 0 ){
+						slideIndex = slides.length - 1;
+					}
+					slides.forEach( slide => {
+						slide.classList.remove(""zx_displaySlide"");
+					});
+					slides[ slideIndex ].classList.add(""zx_displaySlide"");
+				}
+
+				function prevSlide(){
+					clearInterval( intervalId )
+					slideIndex --;
+					showSlide( slideIndex );
+				}
+
+				function nextSlide(){
+					slideIndex ++;
+					showSlide( slideIndex );
 				}
 
 				function createImage( imageURL, container, width, spacing, showInfo, title, alt, showOnClick ) {
@@ -586,13 +678,13 @@ component extends="contentbox.models.ui.BaseWidget" singleton{
 
 				function resizeOverlay(){
 					// Check if the overlay is displayed
-					let largeImage = document.getElementById('overlayImage');
-					if ( largeImage !== null ){
+					let overlayImage = document.getElementById('overlayImage');
+					if ( overlayImage !== null ){
 						// Set the size
-						imgWidth  = Math.min( largeImage.naturalWidth,  window.innerWidth  );
-						imgHeight = Math.min( largeImage.naturalHeight, window.innerHeight );
-						largeImage.style.maxWidth = imgWidth + 'px';
-						largeImage.style.maxHeight = imgHeight + 'px';
+						imgWidth  = Math.min( overlayImage.naturalWidth,  window.innerWidth  );
+						imgHeight = Math.min( overlayImage.naturalHeight, window.innerHeight );
+						overlayImage.style.maxWidth  = imgWidth + 'px';
+						overlayImage.style.maxHeight = imgHeight + 'px';
 					}
 				}
 
